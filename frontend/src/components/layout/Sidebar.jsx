@@ -1,0 +1,4 @@
+import {NavLink} from "react-router-dom";
+import {LayoutDashboard,Bot,Activity,HeartPulse,ListChecks,AlertTriangle,Wrench,BarChart3,Sparkles,Settings} from "lucide-react";
+const items=[["Dashboard","/",LayoutDashboard],["Robots","/robots",Bot],["Telemetry","/telemetry",Activity],["Health","/health",HeartPulse],["Tasks","/tasks",ListChecks],["Alerts","/alerts",AlertTriangle],["Maintenance","/maintenance",Wrench],["Analytics","/analytics",BarChart3],["AI Assistant","/ai-assistant",Sparkles],["Settings","/settings",Settings]];
+export default function Sidebar(){return <aside className="sidebar"><div className="brand">RoboOps</div><nav>{items.map(([label,path,Icon])=><NavLink key={path} to={path} end={path==="/"} className={({isActive})=>isActive?"link active":"link"}><Icon size={18}/><span>{label}</span></NavLink>)}</nav><div className="profile">Admin Demo</div></aside>}

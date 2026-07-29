@@ -1,0 +1,1 @@
+const BASE_URL=import.meta.env.VITE_API_BASE_URL||"http://localhost:8000";export async function getHealth(){const r=await fetch(`${BASE_URL}/health`);if(!r.ok)throw new Error(`Health request failed: ${r.status}`);return r.json()}

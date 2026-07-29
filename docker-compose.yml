@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-roboops_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-roboops_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-roboops_db}
+    ports:
+     - "5433:5432"
+    volumes: ["roboops_pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-roboops_user} -d ${POSTGRES_DB:-roboops_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+    env_file: [.env]
+    ports: ["8000:8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports: ["5173:5173"]
+    depends_on: [backend]
+volumes:
+  roboops_pgdata:

@@ -1,0 +1,1 @@
+export default function Settings(){return <section className="page"><div className="eyebrow">RoboOps Platform</div><h1>Settings</h1><p>This page will be implemented in a future phase.</p><div className="placeholder">Phase 1 placeholder</div></section>}
