@@ -46,8 +46,8 @@ jobs:
         env:
           PGPASSWORD: roboops_pass
         run: |
-          psql -h localhost -U roboops_user -d roboops_test_db -v ON_ERROR_STOP=1 -c "SELECT 'CREATE DATABASE roboops_db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'roboops_db')\gexec"
-          psql -h localhost -U roboops_user -d roboops_test_db -v ON_ERROR_STOP=1 -c "SELECT 'CREATE DATABASE roboops_migration_test_db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'roboops_migration_test_db')\gexec"
+          psql -h localhost -U roboops_user -d roboops_test_db -tAc "SELECT 1 FROM pg_database WHERE datname='roboops_db'" | grep -q 1 || psql -h localhost -U roboops_user -d roboops_test_db -c "CREATE DATABASE roboops_db;"
+          psql -h localhost -U roboops_user -d roboops_test_db -tAc "SELECT 1 FROM pg_database WHERE datname='roboops_migration_test_db'" | grep -q 1 || psql -h localhost -U roboops_user -d roboops_test_db -c "CREATE DATABASE roboops_migration_test_db;"
       - run: pip install -r requirements.txt
       - name: Run Alembic migrations against DATABASE_URL
         run: alembic upgrade head
