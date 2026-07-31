@@ -1,13 +1,18 @@
 """API tests for the sites CRUD endpoints."""
 from __future__ import annotations
 
+import os
 import uuid
+import pytest
 from datetime import datetime, timezone
 
 from app.models.robot import Robot, RobotStatus
 from app.models.robot_model import RobotModel
 from app.models.site import Site
 
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("TEST_DATABASE_URL"), reason="TEST_DATABASE_URL is not set."
+)
 
 def _site_payload(code):
     return {"site_code": code, "name": "Test Site", "address": "123 Main St", "timezone": "UTC"}
