@@ -18,6 +18,7 @@ import os
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from fastapi.testclient import TestClient
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL")
@@ -78,3 +79,19 @@ def db_session():
         session.close()
         outer_transaction.rollback()
         connection.close()
+
+@pytest.fixture()
+def client(db_session):
+    """A TestClient whose app uses the same transactional db_session."""
+    from app.database import get_db
+    from app.main import app
+
+    def _override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.pop(get_db, None)
