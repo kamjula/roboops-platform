@@ -1,10 +1,14 @@
 """API tests for the robots CRUD endpoints."""
 from __future__ import annotations
 
+import os
 import uuid
 
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("TEST_DATABASE_URL"), reason="TEST_DATABASE_URL is not set."
+)
 
 def _robot_payload(site_id, model_id, code, serial):
     return {
