@@ -27,3 +27,13 @@ class RobotRead(RobotBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+
+
+class RobotUpdate(BaseModel):
+    robot_code: str | None = None
+    name: str | None = None
+    serial_number: str | None = None
+    model_id: uuid.UUID | None = None
+    site_id: uuid.UUID | None = None
+    status: RobotStatus | None = None
+    installed_at: datetime | None = None
