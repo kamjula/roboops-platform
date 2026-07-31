@@ -21,3 +21,10 @@ class SiteRead(SiteBase):
 
     id: uuid.UUID
     created_at: datetime
+
+
+class SiteUpdate(BaseModel):
+    site_code: str | None = None
+    name: str | None = None
+    address: str | None = None
+    timezone: str | None = None
