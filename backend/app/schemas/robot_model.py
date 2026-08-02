@@ -21,3 +21,10 @@ class RobotModelRead(RobotModelBase):
 
     id: uuid.UUID
     created_at: datetime
+
+
+class RobotModelUpdate(BaseModel):
+    model_code: str | None = None
+    manufacturer: str | None = None
+    name: str | None = None
+    category: str | None = None

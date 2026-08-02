@@ -6,11 +6,11 @@ from app.schemas.maintenance_schedule import (
     MaintenanceScheduleCreate,
     MaintenanceScheduleRead,
 )
-from app.schemas.robot import RobotBase, RobotCreate, RobotRead
-from app.schemas.robot_model import RobotModelBase, RobotModelCreate, RobotModelRead
+from app.schemas.robot import RobotBase, RobotCreate, RobotRead, RobotUpdate
+from app.schemas.robot_model import RobotModelBase, RobotModelCreate, RobotModelRead, RobotModelUpdate
 from app.schemas.sensor import SensorBase, SensorCreate, SensorRead
 from app.schemas.sensor_reading import SensorReadingBase, SensorReadingCreate, SensorReadingRead
-from app.schemas.site import SiteBase, SiteCreate, SiteRead
+from app.schemas.site import SiteBase, SiteCreate, SiteRead, SiteUpdate
 from app.schemas.technician import TechnicianBase, TechnicianCreate, TechnicianRead
 
 __all__ = [
@@ -26,9 +26,11 @@ __all__ = [
     "RobotBase",
     "RobotCreate",
     "RobotRead",
+    "RobotUpdate",
     "RobotModelBase",
     "RobotModelCreate",
     "RobotModelRead",
+    "RobotModelUpdate",
     "SensorBase",
     "SensorCreate",
     "SensorRead",
@@ -38,6 +40,7 @@ __all__ = [
     "SiteBase",
     "SiteCreate",
     "SiteRead",
+    "SiteUpdate",
     "TechnicianBase",
     "TechnicianCreate",
     "TechnicianRead",
