@@ -33,6 +33,7 @@ class DashboardSummary(BaseModel):
     warning_alerts: int
     critical_alerts: int
     maintenance_due_count: int
+    maintenance_overdue_count: int
 
 
 class RobotStatusCounts(BaseModel):
@@ -98,6 +99,8 @@ class MaintenanceSummaryResponse(BaseModel):
       maintenance" figure.
     """
 
+    scheduled_count: int
+    in_progress_count: int
     due_count: int
     overdue_count: int
     completed_count: int
