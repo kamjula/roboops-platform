@@ -83,6 +83,23 @@ def get_maintenance_overdue_count(db: Session, as_of: datetime | None = None) ->
     )
     return db.execute(stmt).scalar_one()
 
+def get_maintenance_scheduled_count(db: Session) -> int:
+    """Count of maintenance schedules currently in the scheduled status,
+    regardless of whether scheduled_for is due or overdue.
+    """
+    stmt = select(func.count(MaintenanceSchedule.id)).where(
+        MaintenanceSchedule.status == MaintenanceStatus.SCHEDULED,
+    )
+    return db.execute(stmt).scalar_one()
+
+def get_maintenance_in_progress_count(db: Session) -> int:
+    """Count of maintenance schedules currently in the in_progress status,
+    regardless of whether scheduled_for is due or overdue.
+    """
+    stmt = select(func.count(MaintenanceSchedule.id)).where(
+        MaintenanceSchedule.status == MaintenanceStatus.IN_PROGRESS,
+    )
+    return db.execute(stmt).scalar_one()
 
 def get_maintenance_completed_count(db: Session) -> int:
     """Total completed maintenance history rows (MaintenanceRecord count).
@@ -110,6 +127,7 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         warning_alerts=severity_counts[AlertSeverity.WARNING],
         critical_alerts=severity_counts[AlertSeverity.CRITICAL],
         maintenance_due_count=get_maintenance_due_count(db),
+        maintenance_overdue_count=get_maintenance_overdue_count(db),
     )
 
 
@@ -164,6 +182,8 @@ def get_health_summary(db: Session, as_of: datetime | None = None) -> HealthSumm
 def get_maintenance_summary(db: Session, as_of: datetime | None = None) -> MaintenanceSummaryResponse:
     as_of = as_of or _utc_now()
     return MaintenanceSummaryResponse(
+        scheduled_count=get_maintenance_scheduled_count(db),
+        in_progress_count=get_maintenance_in_progress_count(db),
         due_count=get_maintenance_due_count(db, as_of),
         overdue_count=get_maintenance_overdue_count(db, as_of),
         completed_count=get_maintenance_completed_count(db),
