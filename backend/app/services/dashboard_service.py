@@ -112,6 +112,7 @@ def get_maintenance_completed_count(db: Session) -> int:
 
 
 def get_dashboard_summary(db: Session) -> DashboardSummary:
+    as_of = _utc_now()
     status_counts = _robot_status_counts(db)
     severity_counts = _open_alert_severity_counts(db)
     total_sites = db.execute(select(func.count(Site.id))).scalar_one()
@@ -126,8 +127,8 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         open_alerts=sum(severity_counts.values()),
         warning_alerts=severity_counts[AlertSeverity.WARNING],
         critical_alerts=severity_counts[AlertSeverity.CRITICAL],
-        maintenance_due_count=get_maintenance_due_count(db),
-        maintenance_overdue_count=get_maintenance_overdue_count(db),
+        maintenance_due_count=get_maintenance_due_count(db, as_of),
+        maintenance_overdue_count=get_maintenance_overdue_count(db, as_of),
     )
 
 
@@ -170,6 +171,7 @@ def get_health_summary(db: Session, as_of: datetime | None = None) -> HealthSumm
     raw sensor_readings.value cannot be honestly averaged across sensors
     that use different units (temperature, volts, vibration, etc.).
     """
+    as_of = as_of or _utc_now()
     return HealthSummaryResponse(
         average_health_value=None,
         health_metric_available=False,
