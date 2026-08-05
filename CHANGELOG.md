@@ -34,6 +34,5 @@ All notable changes to this project are documented in this file. This project us
 
 ---
 Note: entries above were reconstructed from the actual commit and CI history in this repository. No version tags exist yet in this repository; creating them (e.g. v0.4.0 for the current head) is a recommended next step.
-
 ---
 Note: entries above were reconstructed from the actual commit and CI history in this repository. No version tags exist yet in this repository; creating them (e.g. v0.4.0 for the current head) is a recommended next step.
