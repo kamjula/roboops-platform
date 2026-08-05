@@ -26,7 +26,9 @@ flowchart LR
     B --> C[(PostgreSQL)]
     B --> D[Alembic Migrations]
     subgraph CI [GitHub Actions CI]
-        E[Postgres Service Container] --> F[pytest: ORM + API + Migration tests]
+        E1[backend-tests: pytest unit and API tests]
+        E2[backend-db-tests: Postgres service container + pytest ORM and migration tests]
+        E3[frontend-tests: npm test]
     end
 ```
 
