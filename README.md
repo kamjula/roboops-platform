@@ -1,5 +1,44 @@
 # RoboOps
 
+## Honest Project Status
+
+![CI](https://github.com/kamjula/roboops-platform/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+| Phase | Scope | Status |
+|-------|-------|--------|
+| Phase 1 | React/Vite + FastAPI scaffold, Docker Compose, health check | Complete |
+| Phase 2 | PostgreSQL schema, Alembic migrations, seed data, isolated test databases | Complete |
+| Phase 3 | Core CRUD APIs for robots, robot_models, and sites | Complete |
+| Phase 4 | Read-only fleet dashboard APIs (6 endpoints) | Complete |
+| Phase 5 | Authentication and RBAC | Planned |
+| Phase 6 | Kafka telemetry streaming and a full React dashboard UI | Planned |
+
+Known limitation: authentication and authorization are not yet implemented on any route. This is a deliberate, documented scope decision - see SECURITY.md and docs/adr/0001-defer-authentication.md.
+
+### Architecture
+
+```mermaid
+flowchart LR
+    A[React + Vite Frontend - Phase 1 scaffold] -->|REST| B[FastAPI Backend]
+    B --> C[(PostgreSQL)]
+    B --> D[Alembic Migrations]
+    subgraph CI [GitHub Actions CI]
+        E[Postgres Service Container] --> F[pytest: ORM + API + Migration tests]
+    end
+```
+
+### Implemented API surface
+- /api/v1/sites - full CRUD
+- /api/v1/robot-models - full CRUD
+- /api/v1/robots - full CRUD
+- /api/v1/dashboard/* - 6 read-only aggregate endpoints (summary, robot-status, latest-alerts, health-summary, site-summary, maintenance-summary)
+- /health - service health check
+
+Note: technicians, sensors, sensor_readings, maintenance_schedules, maintenance_records, and alerts have database tables and models (Phase 2) but do not yet have dedicated CRUD routers.
+
 Robotics Fleet Monitoring & Predictive Maintenance Platform.
 
 ## Phase 1
