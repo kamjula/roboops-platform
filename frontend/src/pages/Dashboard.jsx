@@ -4,6 +4,7 @@ import ErrorState from "../components/common/ErrorState.jsx";
 import SummaryCards from "../components/dashboard/SummaryCards.jsx";
 import SectionPlaceholder from "../components/dashboard/SectionPlaceholder.jsx";
 import RobotStatusChart from "../components/dashboard/RobotStatusChart.jsx";
+import RecentAlerts from "../components/dashboard/RecentAlerts.jsx";
 import useDashboardData from "../hooks/useDashboardData.js";
 
 export default function Dashboard() {
@@ -22,7 +23,7 @@ export default function Dashboard() {
           <div className="dashboard-grid">
             <RobotStatusChart robotStatus={data.robotStatus} />
             <SectionPlaceholder title="Robot Health" />
-            <SectionPlaceholder title="Recent Alerts" />
+            <RecentAlerts alerts={data.latestAlerts} />
             <SectionPlaceholder title="Maintenance" />
             <SectionPlaceholder title="Site Summary" />
           </div>
