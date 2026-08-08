@@ -1,1 +1,24 @@
-import {createElement as h} from "react";import {Search,Settings,Bell} from "lucide-react";export default function Header({title="Dashboard"}={}){return h("header",{className:"app-header"},h("h2",{className:"header-title"},title),h("div",{className:"header-actions"},h("button",{type:"button",className:"icon-button","aria-label":"Search"},h(Search,{size:18})),h("button",{type:"button",className:"icon-button","aria-label":"Notifications"},h(Bell,{size:18})),h("button",{type:"button",className:"icon-button","aria-label":"Settings"},h(Settings,{size:18})),h("div",{className:"header-user"},h("div",{className:"header-avatar","aria-hidden":"true"},"A"),h("span",null,"Admin Demo"))))}
+import { Search, Settings, Bell } from "lucide-react";
+
+export default function Header({ title = "Dashboard" } = {}) {
+  return (
+    <header className="app-header">
+      <h2 className="header-title">{title}</h2>
+      <div className="header-actions">
+        <button type="button" className="icon-button" aria-label="Search">
+          <Search size={18} />
+        </button>
+        <button type="button" className="icon-button" aria-label="Notifications">
+          <Bell size={18} />
+        </button>
+        <button type="button" className="icon-button" aria-label="Settings">
+          <Settings size={18} />
+        </button>
+        <div className="header-user">
+          <div className="header-avatar" aria-hidden="true">A</div>
+          <span>Admin Demo</span>
+        </div>
+      </div>
+    </header>
+  );
+}
