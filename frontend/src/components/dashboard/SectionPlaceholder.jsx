@@ -1,1 +1,11 @@
-import {createElement as h} from "react";export default function SectionPlaceholder({title,description="This section will be implemented in a future Phase 5 step."}={}){return h("section",{className:"dashboard-section placeholder-section","aria-label":title},h("h3",{className:"section-title"},title),h("div",{className:"placeholder"},description))}
+export default function SectionPlaceholder({
+  title,
+  description = "This section will be implemented in a future Phase 5 step.",
+} = {}) {
+  return (
+    <section className="dashboard-section placeholder-section" aria-label={title}>
+      <h3 className="section-title">{title}</h3>
+      <div className="placeholder">{description}</div>
+    </section>
+  );
+}
