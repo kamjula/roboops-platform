@@ -1,1 +1,8 @@
-import {createElement as h} from "react";export default function LoadingState({label="Loading dashboard data..."}={}){return h("div",{className:"state-panel loading-state",role:"status"},h("div",{className:"spinner","aria-hidden":"true"}),h("p",null,label))}
+export default function LoadingState({ label = "Loading dashboard data..." } = {}) {
+  return (
+    <div className="state-panel loading-state" role="status">
+      <div className="spinner" aria-hidden="true" />
+      <p>{label}</p>
+    </div>
+  );
+}
