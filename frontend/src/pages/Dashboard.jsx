@@ -3,6 +3,7 @@ import LoadingState from "../components/common/LoadingState.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import SummaryCards from "../components/dashboard/SummaryCards.jsx";
 import SectionPlaceholder from "../components/dashboard/SectionPlaceholder.jsx";
+import RobotStatusChart from "../components/dashboard/RobotStatusChart.jsx";
 import useDashboardData from "../hooks/useDashboardData.js";
 
 export default function Dashboard() {
@@ -19,7 +20,7 @@ export default function Dashboard() {
         <>
           <SummaryCards summary={data.summary} maintenanceSummary={data.maintenanceSummary} />
           <div className="dashboard-grid">
-            <SectionPlaceholder title="Fleet Status" />
+            <RobotStatusChart robotStatus={data.robotStatus} />
             <SectionPlaceholder title="Robot Health" />
             <SectionPlaceholder title="Recent Alerts" />
             <SectionPlaceholder title="Maintenance" />
