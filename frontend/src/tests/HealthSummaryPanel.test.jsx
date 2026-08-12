@@ -37,4 +37,22 @@ describe("HealthSummaryPanel", () => {
     render(<HealthSummaryPanel healthSummary={null} />);
     expect(screen.getByText("Health data unavailable.")).toBeInTheDocument();
   });
+
+    it("renders all-zero counts without treating them as missing", () => {
+          const zeroHealthSummary = {
+                  average_health_value: null,
+                  health_metric_available: false,
+                  robot_status_counts: { active: 0, idle: 0, maintenance: 0, offline: 0, decommissioned: 0 },
+                  maintenance_due_count: 0,
+                  maintenance_overdue_count: 0,
+          };
+          render(<HealthSummaryPanel healthSummary={zeroHealthSummary} />);
+          expect(
+                  screen.getByText("Aggregate health metric is not currently available.")
+                ).toBeInTheDocument();
+          expect(screen.getByText("Active")).toBeInTheDocument();
+          expect(screen.getByText("Maintenance Due")).toBeInTheDocument();
+          expect(screen.getByText("Maintenance Overdue")).toBeInTheDocument();
+          expect(screen.getAllByText("0").length).toBeGreaterThanOrEqual(7);
+    });
 });
