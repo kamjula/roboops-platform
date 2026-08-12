@@ -10,9 +10,9 @@ export default function SiteSummaryPanel({ siteSummary } = {}) {
         <table className="site-summary-table">
           <thead>
             <tr>
-              <th>Site Code</th>
-              <th>Site Name</th>
-              <th>Robots</th>
+              <th scope="col">Site Code</th>
+              <th scope="col">Site Name</th>
+              <th scope="col">Robots</th>
             </tr>
           </thead>
           <tbody>
