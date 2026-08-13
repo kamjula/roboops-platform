@@ -15,8 +15,8 @@ export default function Header({ title = "Dashboard" } = {}) {
           <Settings size={18} />
         </button>
         <div className="header-user">
-          <div className="header-avatar" aria-hidden="true">A</div>
-          <span>Admin Demo</span>
+          <div className="header-avatar" aria-hidden="true">D</div>
+          <span>Demo Workspace</span>
         </div>
       </div>
     </header>
