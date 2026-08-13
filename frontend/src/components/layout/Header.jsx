@@ -3,17 +3,17 @@ import { Search, Settings, Bell } from "lucide-react";
 export default function Header({ title = "Dashboard" } = {}) {
   return (
     <header className="app-header">
-      <h2 className="header-title">{title}</h2>
+      <h1 className="header-title">{title}</h1>
       <div className="header-actions">
-        <button type="button" className="icon-button" aria-label="Search">
+        <span className="icon-button" aria-hidden="true">
           <Search size={18} />
-        </button>
-        <button type="button" className="icon-button" aria-label="Notifications">
+        </span>
+        <span className="icon-button" aria-hidden="true">
           <Bell size={18} />
-        </button>
-        <button type="button" className="icon-button" aria-label="Settings">
+        </span>
+        <span className="icon-button" aria-hidden="true">
           <Settings size={18} />
-        </button>
+        </span>
         <div className="header-user">
           <div className="header-avatar" aria-hidden="true">D</div>
           <span>Demo Workspace</span>
