@@ -80,9 +80,13 @@ describe("dashboard api client", () => {
       });
     }));
 
+    // Attach the rejection assertion immediately so the promise always has a
+    // handler before the fake timer advances and triggers the abort, avoiding
+    // a spurious unhandled-rejection warning.
     const pending = getDashboardSummary();
-    await vi.advanceTimersByTimeAsync(8000);
+    const assertion = expect(pending).rejects.toThrow(/timed out/i);
 
-    await expect(pending).rejects.toThrow(/timed out/i);
+    await vi.advanceTimersByTimeAsync(8000);
+    await assertion;
   });
 });
