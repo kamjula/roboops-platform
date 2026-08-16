@@ -13,8 +13,12 @@
 | Phase 2 | PostgreSQL schema, Alembic migrations, seed data, isolated test databases | Complete |
 | Phase 3 | Core CRUD APIs for robots, robot_models, and sites | Complete |
 | Phase 4 | Read-only fleet dashboard APIs (6 endpoints) | Complete |
-| Phase 5 | Authentication and RBAC | Planned |
-| Phase 6 | Kafka telemetry streaming and a full React dashboard UI | Planned |
+| Phase 5 | React Enterprise Dashboard (frontend wired to the Phase 4 APIs) | Complete |
+| Phase 6 | Authentication and RBAC | Next |
+| Phase 7 | Kafka telemetry streaming | Planned |
+| Phase 8 | Advanced analytics and monitoring | Planned |
+| Phase 9 | Predictive maintenance ML | Planned |
+| Phase 10 | AI-assisted operations and incident analysis | Planned |
 
 Known limitation: authentication and authorization are not yet implemented on any route. This is a deliberate, documented scope decision - see SECURITY.md and docs/adr/0001-defer-authentication.md.
 
@@ -22,7 +26,7 @@ Known limitation: authentication and authorization are not yet implemented on an
 
 ```mermaid
 flowchart LR
-    A[React + Vite Frontend - Phase 1 scaffold] -->|REST| B[FastAPI Backend]
+    A[React + Vite Frontend - Enterprise Dashboard, Phase 5] -->|REST| B[FastAPI Backend]
     B --> C[(PostgreSQL)]
     B --> D[Alembic Migrations]
     subgraph CI [GitHub Actions CI]
@@ -46,6 +50,10 @@ Robotics Fleet Monitoring & Predictive Maintenance Platform.
 ## Phase 1
 
 React + Vite frontend, FastAPI backend, PostgreSQL via Docker Compose, route placeholders, health endpoint, and starter tests.
+
+## Phase 5: React Enterprise Dashboard
+
+Phase 5 replaces the Phase 1 frontend route placeholders with a real dashboard wired to the live Phase 4 APIs. It adds an API client with request timeout handling (`AbortController`, 8s default), a `useDashboardData` hook, and dashboard panels for fleet summary, robot status, recent alerts, robot health, maintenance, and site summary. All page routes are lazy-loaded via `React.lazy` + `Suspense` to keep the initial bundle small. No fabricated metrics are shown: where the backend does not expose an aggregate health score, the UI reports it as unavailable rather than inventing a number. Covered by 10 frontend test files (32 tests).
 
 ## Quick start
 
