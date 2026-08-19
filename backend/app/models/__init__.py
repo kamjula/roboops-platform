@@ -9,6 +9,7 @@ from app.models.sensor import Sensor, SensorType
 from app.models.sensor_reading import SensorReading
 from app.models.site import Site
 from app.models.technician import Technician
+from app.models.user import User, UserRole
 
 __all__ = [
     "Base",
@@ -25,4 +26,6 @@ __all__ = [
     "SensorReading",
     "Site",
     "Technician",
+    "User",
+    "UserRole",
 ]
