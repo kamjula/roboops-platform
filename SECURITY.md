@@ -7,7 +7,8 @@ This is an actively developed portfolio project. Only the latest commit on `main
 ## Known, Documented Limitations (not vulnerabilities to report)
 
 The following are intentional, in-progress scope decisions, not oversights:
-- No authentication or authorization exists on any API route yet (all endpoints under `/api/v1/*` are open). This is tracked as Phase 5 work. Do not deploy this API on an untrusted network or with real/sensitive data until Phase 5 ships.
+- Authentication is implemented as a Phase 6 foundation only; RBAC enforcement remains out of scope for this slice. All existing routes remain open until route-level authorization is added in a later phase.
+- JWTs are signed with a server-managed secret and should never be used in production without a non-default secret configured through environment variables.
 - CORS origins are controlled via application settings (`app/core/config.py`) and should be restricted to trusted origins in any non-local environment.
 - Seed data (`backend/scripts/seed.py`) is 100% synthetic and fictional; it is not representative of real users or robots.
 

@@ -16,7 +16,7 @@ from __future__ import annotations
 import os
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
@@ -54,6 +54,15 @@ def _get_test_engine():
         from app.models import Base  # imported lazily so Base.metadata is fully populated
 
         _test_engine = create_engine(TEST_DATABASE_URL, future=True)
+        with _test_engine.begin() as connection:
+            connection.execute(text("DROP SCHEMA public CASCADE"))
+            connection.execute(text("CREATE SCHEMA public"))
+            connection.execute(
+                text(
+                    "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN "
+                    "CREATE TYPE user_role AS ENUM ('viewer', 'operator', 'admin'); END IF; END $$;"
+                )
+            )
         Base.metadata.create_all(bind=_test_engine)
     return _test_engine
 
