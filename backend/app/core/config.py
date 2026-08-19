@@ -6,6 +6,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+psycopg://roboops_user:roboops_pass@localhost:5432/roboops_db"
     cors_origins: str = "http://localhost:5173"
+    jwt_secret_key: str = "local-dev-jwt-secret-change-me"
+    jwt_algorithm: str = "HS256"
+    access_token_expiry_minutes: int = 30
+
     @property
     def cors_origin_list(self):
         return [x.strip() for x in self.cors_origins.split(',') if x.strip()]
