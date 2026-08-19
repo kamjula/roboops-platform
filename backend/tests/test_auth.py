@@ -4,7 +4,9 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
+from app.core.config import Settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.main import app
 from app.models import User, UserRole
@@ -27,6 +29,16 @@ def _create_user(db_session, *, email: str, password: str = "Passw0rd!", is_acti
     db_session.commit()
     db_session.refresh(user)
     return user
+
+
+def test_settings_require_explicit_jwt_secret(monkeypatch):
+    monkeypatch.delenv("JWT_SECRET_KEY", raising=False)
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
+
+    monkeypatch.setenv("JWT_SECRET_KEY", "test-jwt-secret-value-for-local-tests-123")
+    settings = Settings(_env_file=None)
+    assert settings.jwt_secret_key == "test-jwt-secret-value-for-local-tests-123"
 
 
 def test_password_hashing_and_verification(db_session):
