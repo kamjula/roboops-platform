@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
+  ACCESS_TOKEN_KEY,
+  getCurrentUser,
   getDashboardSummary,
   getRobotStatus,
   getSiteSummary,
   getMaintenanceSummary,
   getLatestAlerts,
   getHealthSummary,
+  login,
 } from "../services/api.js";
 
 function mockFetchOnce(body) {
@@ -20,6 +23,7 @@ function mockFetchOnce(body) {
 describe("dashboard api client", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -31,6 +35,28 @@ describe("dashboard api client", () => {
     await getDashboardSummary();
     const calledUrl = global.fetch.mock.calls[0][0].toString();
     expect(calledUrl).toContain("/api/v1/dashboard/summary");
+  });
+
+  it("submits login credentials as a form with username mapped from email", async () => {
+    mockFetchOnce({ access_token: "token" });
+    await login("operator@example.com", "secret");
+    const [, options] = global.fetch.mock.calls[0];
+    expect(options.method).toBe("POST");
+    expect(options.headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
+    expect(options.body.toString()).toBe("username=operator%40example.com&password=secret");
+  });
+
+  it("injects the current bearer token and supports the current-user endpoint", async () => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, "stored-token");
+    mockFetchOnce({ email: "viewer@example.com", role: "viewer" });
+    await getCurrentUser();
+    expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer stored-token");
+  });
+
+  it("omits authorization when no token is stored", async () => {
+    mockFetchOnce({ total_robots: 0 });
+    await getDashboardSummary();
+    expect(global.fetch.mock.calls[0][1].headers.Authorization).toBeUndefined();
   });
 
   it("calls the robot-status endpoint", async () => {
@@ -68,6 +94,23 @@ describe("dashboard api client", () => {
   it("throws a descriptive error on non-2xx responses", async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, statusText: "Server Error" });
     await expect(getDashboardSummary()).rejects.toThrow(/500/);
+  });
+
+  it("preserves 401 and 403 statuses on API errors", async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 401, statusText: "Unauthorized" })
+      .mockResolvedValueOnce({ ok: false, status: 403, statusText: "Forbidden" });
+    await expect(getDashboardSummary()).rejects.toMatchObject({ status: 401 });
+    await expect(getDashboardSummary()).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("does not emit an unauthorized event for a 403 response", async () => {
+    const unauthorized = vi.fn();
+    window.addEventListener("roboops:unauthorized", unauthorized);
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: "Forbidden" });
+    await expect(getDashboardSummary()).rejects.toMatchObject({ status: 403 });
+    expect(unauthorized).not.toHaveBeenCalled();
+    window.removeEventListener("roboops:unauthorized", unauthorized);
   });
 
   it("rejects with a descriptive timeout error when a request exceeds the timeout", async () => {
