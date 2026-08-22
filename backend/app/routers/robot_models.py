@@ -6,17 +6,22 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.security import require_roles
 from app.database import get_db
+from app.models import UserRole
 from app.schemas.robot_model import RobotModelCreate, RobotModelRead, RobotModelUpdate
 from app.services import robot_model_service
 from app.services.exceptions import ConflictError, NotFoundError
 
 
 router = APIRouter(prefix="/api/v1/robot-models", tags=["robot-models"])
+admin_write = Depends(require_roles(UserRole.ADMIN))
 
 
 @router.post("", response_model=RobotModelRead, status_code=status.HTTP_201_CREATED)
-def create_robot_model(payload: RobotModelCreate, db: Session = Depends(get_db)) -> RobotModelRead:
+def create_robot_model(
+    payload: RobotModelCreate, db: Session = Depends(get_db), _: object = admin_write
+) -> RobotModelRead:
     try:
         return robot_model_service.create_robot_model(db, payload)
     except ConflictError as exc:
@@ -42,7 +47,10 @@ def get_robot_model(robot_model_id: uuid.UUID, db: Session = Depends(get_db)) ->
 
 @router.patch("/{robot_model_id}", response_model=RobotModelRead)
 def update_robot_model(
-    robot_model_id: uuid.UUID, payload: RobotModelUpdate, db: Session = Depends(get_db)
+    robot_model_id: uuid.UUID,
+    payload: RobotModelUpdate,
+    db: Session = Depends(get_db),
+    _: object = admin_write,
 ) -> RobotModelRead:
     try:
         return robot_model_service.update_robot_model(db, robot_model_id, payload)
@@ -53,7 +61,9 @@ def update_robot_model(
 
 
 @router.delete("/{robot_model_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_robot_model(robot_model_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+def delete_robot_model(
+    robot_model_id: uuid.UUID, db: Session = Depends(get_db), _: object = admin_write
+) -> None:
     try:
         robot_model_service.delete_robot_model(db, robot_model_id)
     except NotFoundError as exc:

@@ -6,17 +6,20 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.core.security import require_roles
 from app.database import get_db
+from app.models import UserRole
 from app.schemas.site import SiteCreate, SiteRead, SiteUpdate
 from app.services import site_service
 from app.services.exceptions import ConflictError, NotFoundError
 
 
 router = APIRouter(prefix="/api/v1/sites", tags=["sites"])
+admin_write = Depends(require_roles(UserRole.ADMIN))
 
 
 @router.post("", response_model=SiteRead, status_code=status.HTTP_201_CREATED)
-def create_site(payload: SiteCreate, db: Session = Depends(get_db)) -> SiteRead:
+def create_site(payload: SiteCreate, db: Session = Depends(get_db), _: object = admin_write) -> SiteRead:
     try:
         return site_service.create_site(db, payload)
     except ConflictError as exc:
@@ -41,7 +44,9 @@ def get_site(site_id: uuid.UUID, db: Session = Depends(get_db)) -> SiteRead:
 
 
 @router.patch("/{site_id}", response_model=SiteRead)
-def update_site(site_id: uuid.UUID, payload: SiteUpdate, db: Session = Depends(get_db)) -> SiteRead:
+def update_site(
+    site_id: uuid.UUID, payload: SiteUpdate, db: Session = Depends(get_db), _: object = admin_write
+) -> SiteRead:
     try:
         return site_service.update_site(db, site_id, payload)
     except NotFoundError as exc:
@@ -51,7 +56,7 @@ def update_site(site_id: uuid.UUID, payload: SiteUpdate, db: Session = Depends(g
 
 
 @router.delete("/{site_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_site(site_id: uuid.UUID, db: Session = Depends(get_db)) -> None:
+def delete_site(site_id: uuid.UUID, db: Session = Depends(get_db), _: object = admin_write) -> None:
     try:
         site_service.delete_site(db, site_id)
     except NotFoundError as exc:

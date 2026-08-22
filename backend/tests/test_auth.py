@@ -13,8 +13,8 @@ from app.models import User, UserRole
 
 
 @pytest.fixture()
-def auth_client(client):
-    return client
+def auth_client(unauthenticated_client):
+    return unauthenticated_client
 
 
 def _create_user(db_session, *, email: str, password: str = "Passw0rd!", is_active: bool = True, role: UserRole = UserRole.VIEWER):

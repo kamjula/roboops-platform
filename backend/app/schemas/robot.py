@@ -1,6 +1,7 @@
 """Pydantic schemas for Robot."""
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -37,3 +38,12 @@ class RobotUpdate(BaseModel):
     site_id: uuid.UUID | None = None
     status: RobotStatus | None = None
     installed_at: datetime | None = None
+
+
+class RobotOperationalStatusUpdate(BaseModel):
+    status: Literal[
+        RobotStatus.ACTIVE,
+        RobotStatus.IDLE,
+        RobotStatus.MAINTENANCE,
+        RobotStatus.OFFLINE,
+    ]

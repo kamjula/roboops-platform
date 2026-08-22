@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.robot import Robot
+from app.models.robot import Robot, RobotStatus
 from app.models.robot_model import RobotModel
 from app.models.site import Site
 from app.schemas.robot import RobotCreate, RobotUpdate
@@ -67,6 +67,14 @@ def update_robot(db: Session, robot_id: uuid.UUID, payload: RobotUpdate) -> Robo
     except IntegrityError as exc:
         db.rollback()
         raise ConflictError("Robot with the given robot_code or serial_number already exists") from exc
+    db.refresh(robot)
+    return robot
+
+
+def update_robot_status(db: Session, robot_id: uuid.UUID, status: RobotStatus) -> Robot:
+    robot = get_robot(db, robot_id)
+    robot.status = status
+    db.commit()
     db.refresh(robot)
     return robot
 
