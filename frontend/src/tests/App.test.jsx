@@ -4,9 +4,9 @@ import { describe, it, expect } from "vitest";
 import App from "../App.jsx";
 
 describe("App", () => {
-  it("renders shell", async () => {
+  it("renders the public login page without the application shell", async () => {
     render(<MemoryRouter><App /></MemoryRouter>);
-    expect(screen.getByText("RoboOps")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.queryByText("RoboOps")).not.toBeInTheDocument();
   });
 });
