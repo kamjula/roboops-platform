@@ -14,6 +14,7 @@ attributes such as transaction._parent.
 from __future__ import annotations
 
 import os
+import uuid
 
 import pytest
 from sqlalchemy import create_engine, text
@@ -91,7 +92,34 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
-    """A TestClient whose app uses the same transactional db_session."""
+    """An admin TestClient whose app uses the same transactional db_session."""
+    from app.core.security import create_access_token, hash_password
+    from app.database import get_db
+    from app.main import app
+    from app.models import User, UserRole
+
+    def _override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    try:
+        with TestClient(app) as test_client:
+            user = User(
+                email=f"admin-{uuid.uuid4()}@example.com",
+                password_hash=hash_password("Passw0rd!"),
+                role=UserRole.ADMIN,
+            )
+            db_session.add(user)
+            db_session.commit()
+            db_session.refresh(user)
+            test_client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
+            yield test_client
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture()
+def unauthenticated_client(db_session):
     from app.database import get_db
     from app.main import app
 
@@ -104,3 +132,44 @@ def client(db_session):
             yield test_client
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture()
+def role_client(client, db_session):
+    from app.core.security import create_access_token, hash_password
+    from app.models import User, UserRole
+
+    def _client(role: UserRole):
+        user = User(
+            email=f"{role.value}-{uuid.uuid4()}@example.com",
+            password_hash=hash_password("Passw0rd!"),
+            role=role,
+        )
+        db_session.add(user)
+        db_session.commit()
+        db_session.refresh(user)
+        client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
+        return client
+
+    return _client
+
+
+@pytest.fixture()
+def viewer_client(role_client):
+    from app.models import UserRole
+
+    return role_client(UserRole.VIEWER)
+
+
+@pytest.fixture()
+def operator_client(role_client):
+    from app.models import UserRole
+
+    return role_client(UserRole.OPERATOR)
+
+
+@pytest.fixture()
+def admin_client(role_client):
+    from app.models import UserRole
+
+    return role_client(UserRole.ADMIN)
