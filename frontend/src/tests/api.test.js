@@ -8,7 +8,9 @@ import {
   getMaintenanceSummary,
   getLatestAlerts,
   getHealthSummary,
+  getRobots,
   login,
+  updateRobotStatus,
 } from "../services/api.js";
 
 function mockFetchOnce(body) {
@@ -35,6 +37,27 @@ describe("dashboard api client", () => {
     await getDashboardSummary();
     const calledUrl = global.fetch.mock.calls[0][0].toString();
     expect(calledUrl).toContain("/api/v1/dashboard/summary");
+  });
+
+  it("calls the robots endpoint with pagination parameters", async () => {
+    mockFetchOnce([]);
+    await getRobots({ skip: 10, limit: 25 });
+    const calledUrl = global.fetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("/api/v1/robots");
+    expect(calledUrl).toContain("skip=10");
+    expect(calledUrl).toContain("limit=25");
+  });
+
+  it("updates a robot operational status with JSON", async () => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, "stored-token");
+    mockFetchOnce({ id: "robot-1", status: "maintenance" });
+    await updateRobotStatus("robot-1", "maintenance");
+    const [calledUrl, options] = global.fetch.mock.calls[0];
+    expect(calledUrl.toString()).toContain("/api/v1/robots/robot-1/status");
+    expect(options.method).toBe("PATCH");
+    expect(options.headers["Content-Type"]).toBe("application/json");
+    expect(options.headers.Authorization).toBe("Bearer stored-token");
+    expect(options.body).toBe(JSON.stringify({ status: "maintenance" }));
   });
 
   it("submits login credentials as a form with username mapped from email", async () => {
