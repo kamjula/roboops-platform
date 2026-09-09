@@ -78,6 +78,18 @@ export async function getHealth() {
   return request("/health");
 }
 
+export function getRobots({ skip, limit } = {}) {
+  return request("/api/v1/robots", { params: { skip, limit } });
+}
+
+export function updateRobotStatus(robotId, status) {
+  return request(`/api/v1/robots/${robotId}/status`, {
+    body: JSON.stringify({ status }),
+    headers: { "Content-Type": "application/json" },
+    method: "PATCH",
+  });
+}
+
 export async function getDashboardSummary() {
   return request("/api/v1/dashboard/summary");
 }
