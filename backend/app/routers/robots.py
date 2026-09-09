@@ -6,7 +6,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.security import require_roles
+from app.core.security import get_current_user, require_roles
 from app.database import get_db
 from app.models import UserRole
 from app.schemas.robot import RobotCreate, RobotOperationalStatusUpdate, RobotRead, RobotUpdate
@@ -43,12 +43,15 @@ def list_robots(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: object = Depends(get_current_user),
 ) -> list[RobotRead]:
     return robot_service.list_robots(db, skip=skip, limit=limit)
 
 
 @router.get("/{robot_id}", response_model=RobotRead)
-def get_robot(robot_id: uuid.UUID, db: Session = Depends(get_db)) -> RobotRead:
+def get_robot(
+    robot_id: uuid.UUID, db: Session = Depends(get_db), _: object = Depends(get_current_user)
+) -> RobotRead:
     try:
         return robot_service.get_robot(db, robot_id)
     except NotFoundError as exc:
