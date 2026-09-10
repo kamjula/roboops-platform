@@ -206,8 +206,9 @@ def test_all_roles_can_read_telemetry(request, telemetry_fixture, fixture_name):
     assert client.get(f"/api/v1/telemetry/sensors/{sensor.id}/readings").status_code == 200
 
 
-def _add_reading(db_session, sensor, recorded_at, value, event_id):
+def _add_reading(db_session, sensor, recorded_at, value, event_id, reading_id=None):
     reading = SensorReading(
+        id=reading_id or uuid.uuid4(),
         sensor_id=sensor.id,
         robot_id=sensor.robot_id,
         recorded_at=recorded_at,
@@ -223,7 +224,7 @@ def test_latest_is_per_sensor_and_uses_sensor_ownership(operator_client, telemet
     robot, sensor, second_sensor, other_robot, other_sensor = telemetry_fixture
     timestamp = datetime(2025, 1, 1, tzinfo=timezone.utc)
     first = _add_reading(db_session, sensor, timestamp, 1, "latest-1")
-    latest = _add_reading(db_session, sensor, timestamp, 2, "latest-2")
+    latest = _add_reading(db_session, sensor, timestamp + timedelta(minutes=1), 2, "latest-2")
     second = _add_reading(db_session, second_sensor, timestamp, 3, "latest-3")
     _add_reading(db_session, other_sensor, timestamp + timedelta(hours=1), 99, "other-1")
     db_session.commit()
@@ -233,6 +234,25 @@ def test_latest_is_per_sensor_and_uses_sensor_ownership(operator_client, telemet
     assert ids == {str(latest.id), str(second.id)}
     assert str(first.id) not in ids
     assert all(item["robot_id"] == str(robot.id) for item in response.json())
+    assert str(other_robot.id) not in {item["robot_id"] for item in response.json()}
+
+
+def test_latest_tie_breaker_uses_descending_id(operator_client, telemetry_fixture, db_session):
+    robot, sensor, second_sensor, other_robot, other_sensor = telemetry_fixture
+    timestamp = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    lower_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
+    higher_id = uuid.UUID("00000000-0000-0000-0000-000000000002")
+    higher = _add_reading(db_session, sensor, timestamp, 2, "tie-higher", reading_id=higher_id)
+    lower = _add_reading(db_session, sensor, timestamp, 1, "tie-lower", reading_id=lower_id)
+    second = _add_reading(db_session, second_sensor, timestamp, 3, "tie-second")
+    _add_reading(db_session, other_sensor, timestamp, 99, "tie-other")
+    db_session.commit()
+
+    response = operator_client.get(f"/api/v1/telemetry/robots/{robot.id}/latest")
+    ids = {item["id"] for item in response.json()}
+    assert response.status_code == 200
+    assert ids == {str(higher.id), str(second.id)}
+    assert str(lower.id) not in ids
     assert str(other_robot.id) not in {item["robot_id"] for item in response.json()}
 
 
