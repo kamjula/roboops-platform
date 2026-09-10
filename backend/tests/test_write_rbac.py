@@ -88,9 +88,9 @@ def test_viewer_cannot_write_or_use_operational_status(viewer_client, db_session
     assert viewer_client.patch(f"/api/v1/robots/{robot.id}/status", json={"status": "idle"}).status_code == 403
 
 
-def test_reads_remain_unauthenticated(unauthenticated_client):
-    assert unauthenticated_client.get("/api/v1/robots").status_code == 200
-    assert unauthenticated_client.get("/api/v1/dashboard/robot-status").status_code == 200
+def test_reads_require_authentication(unauthenticated_client):
+    assert unauthenticated_client.get("/api/v1/robots").status_code == 401
+    assert unauthenticated_client.get("/api/v1/dashboard/robot-status").status_code == 401
 
 
 def test_viewer_can_read(viewer_client):
