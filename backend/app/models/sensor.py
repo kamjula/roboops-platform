@@ -3,7 +3,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,3 +34,5 @@ class Sensor(Base):
     robot: Mapped["Robot"] = relationship(back_populates="sensors")
     readings: Mapped[list["SensorReading"]] = relationship(back_populates="sensor", cascade="all, delete-orphan")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="sensor")
+
+    __table_args__ = (Index("ix_sensors_robot_id", "robot_id"),)

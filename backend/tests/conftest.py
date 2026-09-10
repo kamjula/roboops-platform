@@ -135,9 +135,17 @@ def unauthenticated_client(db_session):
 
 
 @pytest.fixture()
-def role_client(client, db_session):
+def role_client(client, db_session, request):
     from app.core.security import create_access_token, hash_password
     from app.models import User, UserRole
+
+    role_clients = []
+
+    def close_role_clients():
+        for role_test_client in role_clients:
+            role_test_client.__exit__(None, None, None)
+
+    request.addfinalizer(close_role_clients)
 
     def _client(role: UserRole):
         user = User(
@@ -148,8 +156,11 @@ def role_client(client, db_session):
         db_session.add(user)
         db_session.commit()
         db_session.refresh(user)
-        client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
-        return client
+        role_test_client = TestClient(client.app)
+        role_test_client.__enter__()
+        role_test_client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
+        role_clients.append(role_test_client)
+        return role_test_client
 
     return _client
 
