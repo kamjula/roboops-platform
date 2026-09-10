@@ -11,3 +11,7 @@ class ConflictError(Exception):
 
 class InvalidReferenceError(Exception):
     """Raised when a referenced foreign-key id (e.g. site_id, model_id) does not exist."""
+
+
+class IneligibleResourceError(Exception):
+    """Raised when a resource exists but is not eligible for an operation."""
