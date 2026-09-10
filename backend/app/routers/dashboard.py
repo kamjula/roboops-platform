@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.database import get_db
 from app.schemas.dashboard import (
     DashboardSummary,
@@ -19,7 +20,11 @@ from app.schemas.dashboard import (
 )
 from app.services import dashboard_service
 
-router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
+router = APIRouter(
+    prefix="/api/v1/dashboard",
+    tags=["dashboard"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/summary", response_model=DashboardSummary)

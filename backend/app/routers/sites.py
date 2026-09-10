@@ -6,7 +6,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.security import require_roles
+from app.core.security import get_current_user, require_roles
 from app.database import get_db
 from app.models import UserRole
 from app.schemas.site import SiteCreate, SiteRead, SiteUpdate
@@ -31,12 +31,15 @@ def list_sites(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: object = Depends(get_current_user),
 ) -> list[SiteRead]:
     return site_service.list_sites(db, skip=skip, limit=limit)
 
 
 @router.get("/{site_id}", response_model=SiteRead)
-def get_site(site_id: uuid.UUID, db: Session = Depends(get_db)) -> SiteRead:
+def get_site(
+    site_id: uuid.UUID, db: Session = Depends(get_db), _: object = Depends(get_current_user)
+) -> SiteRead:
     try:
         return site_service.get_site(db, site_id)
     except NotFoundError as exc:
