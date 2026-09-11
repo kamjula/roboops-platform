@@ -8,7 +8,7 @@ const STATUS_LABELS = {
   decommissioned: "Decommissioned",
 };
 
-export default function HealthSummaryPanel({ healthSummary } = {}) {
+export default function HealthSummaryPanel({ healthSummary, robotHealth } = {}) {
   if (!healthSummary) {
     return (
       <section className="dashboard-section health-summary-section" aria-label="Robot Health">
@@ -25,6 +25,10 @@ export default function HealthSummaryPanel({ healthSummary } = {}) {
     maintenance_due_count: dueCount,
     maintenance_overdue_count: overdueCount,
   } = healthSummary;
+  const healthCounts = robotHealth?.robots?.reduce((counts, robot) => {
+    counts[robot.health_state] = (counts[robot.health_state] || 0) + 1;
+    return counts;
+  }, {}) || {};
 
   return (
     <section className="dashboard-section health-summary-section" aria-label="Robot Health">
@@ -38,6 +42,11 @@ export default function HealthSummaryPanel({ healthSummary } = {}) {
           </p>
         )}
       </div>
+      {robotHealth ? (
+        <div aria-label="Telemetry health breakdown">
+          Healthy {healthCounts.healthy || 0}, Warning {healthCounts.warning || 0}, Critical {healthCounts.critical || 0}, Unknown {healthCounts.unknown || 0}
+        </div>
+      ) : null}
       {statusCounts ? (
         <ul className="health-status-breakdown" aria-label="Robot status breakdown">
           {STATUS_ORDER.map((key) => (
