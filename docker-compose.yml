@@ -38,9 +38,10 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
-        rpk topic describe roboops.telemetry.readings.v1 --brokers redpanda:9092
-        >/dev/null 2>&1 || rpk topic create roboops.telemetry.readings.v1
-        --brokers redpanda:9092 --partitions 1 --replicas 1
+        for topic in roboops.telemetry.readings.v1 roboops.telemetry.readings.dlq.v1; do
+          rpk topic describe "$$topic" --brokers redpanda:9092 >/dev/null 2>&1 ||
+          rpk topic create "$$topic" --brokers redpanda:9092 --partitions 1 --replicas 1;
+        done
   postgres:
     image: postgres:16-alpine
     environment:

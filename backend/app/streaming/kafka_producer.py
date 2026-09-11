@@ -67,6 +67,9 @@ class KafkaTelemetryTransport:
     def send(self, event: TelemetryEventEnvelope | Any) -> KafkaDeliveryResult:
         if not isinstance(event, TelemetryEventEnvelope):
             event = event.envelope()
+        return self.publish(event.serialize(), str(event.sensor_id), event.event_id, event.source_event_id)
+
+    def publish(self, value: bytes, key: str | None, event_id: str, source_event_id: str | None = None) -> KafkaDeliveryResult:
         delivered = Event()
         failure: list[BaseException] = []
 
@@ -78,24 +81,24 @@ class KafkaTelemetryTransport:
         try:
             self.producer.produce(
                 self.topic,
-                key=str(event.sensor_id),
-                value=event.serialize(),
+                key=key,
+                value=value,
                 on_delivery=on_delivery,
             )
         except Exception as exc:
-            raise KafkaDeliveryError(f"failed to enqueue event {event.event_id}") from exc
+            raise KafkaDeliveryError(f"failed to enqueue event {event_id}") from exc
 
         deadline = self.clock() + self.delivery_timeout_seconds
         while not delivered.is_set() and self.clock() < deadline:
             self.producer.poll(0.1)
         if not delivered.is_set():
-            raise KafkaDeliveryError(f"delivery timed out for event {event.event_id}")
+            raise KafkaDeliveryError(f"delivery timed out for event {event_id}")
         if failure:
             raise failure[0]
         LOGGER.info(
             "event delivered event_id=%s source_event_id=%s topic=%s",
-            event.event_id,
-            event.source_event_id,
+            event_id,
+            source_event_id,
             self.topic,
         )
         return KafkaDeliveryResult()
@@ -105,3 +108,16 @@ class KafkaTelemetryTransport:
         remaining = self.producer.flush(timeout)
         if remaining:
             raise KafkaDeliveryError(f"{remaining} Kafka events remained during flush")
+
+
+class KafkaDlqPublisher:
+    """Publishes bounded DLQ envelopes using the producer delivery path."""
+
+    def __init__(self, bootstrap_servers: str, topic: str = "roboops.telemetry.readings.dlq.v1", client_id: str = "roboops-telemetry-dlq", **kwargs: Any):
+        self.transport = KafkaTelemetryTransport(bootstrap_servers, topic, client_id, **kwargs)
+
+    def publish(self, envelope: Any, key: str | None = None) -> KafkaDeliveryResult:
+        return self.transport.publish(envelope.serialize(), key, f"dlq:{envelope.source_topic}:{envelope.source_partition}:{envelope.source_offset}", envelope.original_event_id)
+
+    def close(self, timeout_seconds: float | None = None) -> None:
+        self.transport.close(timeout_seconds)
