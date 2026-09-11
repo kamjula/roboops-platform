@@ -122,6 +122,42 @@ Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`,
 `KAFKA_CONSUMER_CLIENT_ID`. Phase 8B uses at-least-once processing; it does not
 add a broker, DLQ, or claim exactly-once delivery.
 
+### Phase 8C: local Redpanda end-to-end telemetry
+
+Phase 8C adds a real pinned Redpanda broker for local development. The path is:
+
+```text
+Telemetry simulator / Kafka producer
+    -> roboops.telemetry.readings.v1
+    -> KafkaTelemetryConsumer
+    -> telemetry_service
+    -> PostgreSQL
+```
+
+Start the local services and initialize the single-partition topic:
+
+```bash
+docker compose up -d postgres redpanda
+docker compose run --rm redpanda-topic-init
+docker compose run --rm backend alembic upgrade head
+docker compose run --rm backend python -m scripts.seed
+```
+
+Run the consumer in one terminal, using the Compose network name, then run the
+simulator from the host with `KAFKA_BOOTSTRAP_SERVERS=localhost:9092`:
+
+```bash
+docker compose run --rm -e KAFKA_BOOTSTRAP_SERVERS=redpanda:9092 backend python -m scripts.telemetry_consumer
+cd backend
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092 python -m scripts.telemetry_simulator --transport kafka --once
+```
+
+Verify the reading through the existing authenticated telemetry APIs or the
+PostgreSQL workflow. Phase 8C uses at-least-once delivery and
+`source_event_id` application-level idempotency. Local Redpanda has no TLS or
+SASL; production TLS/SASL/ACLs, DLQ handling, and permanent poison-message
+handling are future work. Exactly-once delivery is not claimed.
+
 ## Phase 2: database foundation
 
 Phase 2 adds the persistent database layer on top of the Phase 1 scaffolding: SQLAlchemy 2.x models, Alembic migrations, Pydantic v2 schemas, a deterministic seed script, and dedicated test databases. Nothing in this section changes Phase 1 routes or behavior.
