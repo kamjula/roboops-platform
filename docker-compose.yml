@@ -1,4 +1,46 @@
 services:
+  redpanda:
+    image: redpandadata/redpanda:v24.2.18
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --check=false
+      - --node-id
+      - "0"
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:9092
+      - --rpc-addr
+      - redpanda:33145
+      - --advertise-rpc-addr
+      - redpanda:33145
+    ports:
+      - "9092:19092"
+      - "9644:9644"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "health", "--brokers", "localhost:9092"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redpanda-topic-init:
+    image: redpandadata/redpanda:v24.2.18
+    depends_on:
+      redpanda:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        rpk topic describe roboops.telemetry.readings.v1 --brokers redpanda:9092
+        >/dev/null 2>&1 || rpk topic create roboops.telemetry.readings.v1
+        --brokers redpanda:9092 --partitions 1 --replicas 1
   postgres:
     image: postgres:16-alpine
     environment:

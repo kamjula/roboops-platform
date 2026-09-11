@@ -109,3 +109,86 @@ jobs:
       - run: npm install
       - run: npm test
       - run: npm run build
+
+  kafka-e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: roboops_user
+          POSTGRES_PASSWORD: roboops_pass
+          POSTGRES_DB: roboops_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U roboops_user -d roboops_test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql+psycopg://roboops_user:roboops_pass@localhost:5432/roboops_db
+      TEST_DATABASE_URL: postgresql+psycopg://roboops_user:roboops_pass@localhost:5432/roboops_test_db
+      MIGRATION_TEST_DATABASE_URL: postgresql+psycopg://roboops_user:roboops_pass@localhost:5432/roboops_migration_test_db
+      JWT_SECRET_KEY: test-jwt-secret-key-for-ci-only-123456
+      KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+      KAFKA_TELEMETRY_TOPIC: roboops.telemetry.readings.v1
+      ROBOOPS_KAFKA_E2E: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - run: pip install -r requirements.txt
+      - name: Start Redpanda
+        working-directory: .
+        run: |
+          docker run --detach --name roboops-redpanda \
+            --publish 9092:19092 --publish 9644:9644 \
+            redpandadata/redpanda:v24.2.18 redpanda start \
+            --overprovisioned --smp 1 --memory 1G --reserve-memory 0M \
+            --check=false --node-id 0 \
+            --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092 \
+            --advertise-kafka-addr internal://redpanda:9092,external://localhost:9092 \
+            --rpc-addr 0.0.0.0:33145 --advertise-rpc-addr localhost:33145
+      - name: Create additional databases
+        env:
+          PGPASSWORD: roboops_pass
+        run: |
+          for database_name in roboops_db roboops_migration_test_db; do
+            psql -h localhost -U roboops_user -d roboops_test_db -tAc "SELECT 1 FROM pg_database WHERE datname='$database_name'" | grep -q 1 || \
+              psql -h localhost -U roboops_user -d roboops_test_db -c "CREATE DATABASE $database_name;"
+          done
+      - name: Wait for Redpanda admin readiness
+        working-directory: .
+        run: |
+          for attempt in $(seq 1 60); do
+            curl --fail --silent http://localhost:9644/v1/status/ready >/dev/null && exit 0
+            sleep 1
+          done
+          echo "Redpanda did not become ready"
+          exit 1
+      - name: Initialize telemetry topic
+        run: |
+          python - <<'PY'
+          from confluent_kafka import KafkaException
+          from confluent_kafka.admin import AdminClient, NewTopic
+
+          admin = AdminClient({"bootstrap.servers": "localhost:9092"})
+          future = admin.create_topics([NewTopic("roboops.telemetry.readings.v1", num_partitions=1, replication_factor=1)])["roboops.telemetry.readings.v1"]
+          try:
+              future.result()
+          except KafkaException as exc:
+              if exc.args[0].code().name != "TOPIC_ALREADY_EXISTS":
+                  raise
+          PY
+      - name: Run migrations
+        run: alembic upgrade head
+      - name: Run real Kafka smoke test
+        run: pytest -q tests/test_kafka_e2e.py

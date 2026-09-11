@@ -91,6 +91,7 @@ class KafkaTelemetryConsumer:
                     "group.id": config.group_id,
                     "client.id": config.client_id,
                     "enable.auto.commit": False,
+                    "enable.auto.offset.store": False,
                     "auto.offset.reset": "earliest",
                 }
             )

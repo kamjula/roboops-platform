@@ -170,6 +170,7 @@ def test_consumer_configuration_disables_auto_commit():
     )
     assert processor.consumer is not None
     assert configs[0]["enable.auto.commit"] is False
+    assert configs[0]["enable.auto.offset.store"] is False
 
 
 def test_malformed_json_is_explicit():
