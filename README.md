@@ -106,6 +106,22 @@ Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`, and
 with `acks=all` and bounded delivery retries. A Kafka consumer, DLQ, and local
 broker are separate future work; delivery is not claimed to be exactly once.
 
+### Phase 8B: Kafka telemetry consumer
+
+The standalone consumer validates version-1 telemetry events, maps them to the
+existing `TelemetryReadingCreate` schema, and persists through the existing
+telemetry service. It disables automatic offset commits and commits only after
+successful persistence or idempotent duplicate handling:
+
+```bash
+python -m scripts.telemetry_consumer
+```
+
+Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`,
+`KAFKA_CONSUMER_GROUP`, `KAFKA_POLL_TIMEOUT_SECONDS`, and
+`KAFKA_CONSUMER_CLIENT_ID`. Phase 8B uses at-least-once processing; it does not
+add a broker, DLQ, or claim exactly-once delivery.
+
 ## Phase 2: database foundation
 
 Phase 2 adds the persistent database layer on top of the Phase 1 scaffolding: SQLAlchemy 2.x models, Alembic migrations, Pydantic v2 schemas, a deterministic seed script, and dedicated test databases. Nothing in this section changes Phase 1 routes or behavior.
