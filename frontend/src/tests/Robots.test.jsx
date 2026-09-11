@@ -104,7 +104,7 @@ describe("Robots page", () => {
     fireEvent.change(select, { target: { value: "maintenance" } });
     expect(api.updateRobotStatus).toHaveBeenCalledWith("robot-1", "maintenance");
     await waitFor(() => expect(screen.getByText("maintenance")).toBeInTheDocument());
-    expect(select).toHaveValue("maintenance");
+    await waitFor(() => expect(screen.getByRole("combobox")).toHaveValue("maintenance"));
   });
 
   it("shows permission feedback and keeps page data after a 403", async () => {
