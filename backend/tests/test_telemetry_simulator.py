@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import httpx
 import pytest
 
+import scripts.telemetry_simulator as simulator_module
 from scripts.telemetry_simulator import (
     HttpTelemetryTransport,
     SimulatorConfigError,
@@ -118,6 +119,14 @@ def test_simulator_cycles_and_payload_excludes_robot_id():
     assert len({event.source_event_id for event in transport.events}) == 3
 
 
+def test_event_and_source_ids_are_stable_for_same_logical_observation():
+    generator = TelemetryGenerator((sensor_config(),), random.Random(4), run_id="run")
+    first = generator.generate_cycle({ROBOT_ID: "active"}, 1, TIMESTAMP)[0]
+    retry_generator = TelemetryGenerator((sensor_config(),), random.Random(4), run_id="run")
+    retry = retry_generator.generate_cycle({ROBOT_ID: "active"}, 1, TIMESTAMP)[0]
+    assert (first.event_id, first.source_event_id) == (retry.event_id, retry.source_event_id)
+
+
 def test_decommissioned_result_disables_remaining_robot_events():
     second_sensor = dict(sensor_entry(), sensor_id="33333333-3333-3333-3333-333333333333")
     sensors = parse_sensor_configuration(json.dumps([sensor_entry(), second_sensor]))
@@ -129,10 +138,35 @@ def test_decommissioned_result_disables_remaining_robot_events():
 
 
 def test_cli_modes_validate_cycles_and_interval():
+    assert build_parser().parse_args([]).transport == "http"
     assert build_parser().parse_args(["--once"]).once is True
     assert build_parser().parse_args(["--cycles", "3", "--interval", "0"]).cycles == 3
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--once", "--cycles", "2"])
+
+
+def test_kafka_mode_does_not_login_or_require_http_credentials(monkeypatch):
+    created = []
+
+    class FakeKafkaTransport:
+        def __init__(self, *args, **kwargs):
+            created.append((args, kwargs))
+
+        def send(self, event):
+            return type("Result", (), {"status_code": 202, "disable_sensor": False, "disable_robot": False})()
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(simulator_module, "KafkaTelemetryTransport", FakeKafkaTransport)
+    monkeypatch.setenv("ROBOOPS_SIMULATOR_SENSORS", json.dumps([sensor_entry()]))
+    monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    monkeypatch.setenv("KAFKA_TELEMETRY_TOPIC", "topic")
+    monkeypatch.delenv("ROBOOPS_API_URL", raising=False)
+    monkeypatch.delenv("ROBOOPS_SIMULATOR_EMAIL", raising=False)
+    monkeypatch.delenv("ROBOOPS_SIMULATOR_PASSWORD", raising=False)
+    assert simulator_module.main(["--transport", "kafka", "--once"]) == 0
+    assert created
 
 
 def test_http_transport_login_payload_and_401_relogin_once():
