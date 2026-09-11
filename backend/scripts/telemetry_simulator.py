@@ -15,6 +15,9 @@ from typing import Callable, Protocol
 
 import httpx
 
+from app.streaming.kafka_producer import KafkaTelemetryTransport
+from app.streaming.telemetry_events import TelemetryEventEnvelope
+
 LOGGER = logging.getLogger("roboops.telemetry_simulator")
 SUPPORTED_TYPES = {"battery", "temperature"}
 EXPECTED_UNITS = {"battery": "percent", "temperature": "celsius"}
@@ -46,6 +49,7 @@ class TelemetryEvent:
     unit: str
     value: float
     observed_at: datetime
+    event_id: str
     source_event_id: str
 
     def payload(self) -> dict[str, object]:
@@ -55,6 +59,18 @@ class TelemetryEvent:
             "observed_at": self.observed_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
             "source_event_id": self.source_event_id,
         }
+
+    def envelope(self, produced_at: datetime | None = None) -> TelemetryEventEnvelope:
+        return TelemetryEventEnvelope(
+            event_version=1,
+            event_type="telemetry.reading",
+            event_id=self.event_id,
+            sensor_id=self.sensor_id,
+            observed_at=self.observed_at,
+            value=self.value,
+            source_event_id=self.source_event_id,
+            produced_at=produced_at or datetime.now(timezone.utc),
+        )
 
 
 @dataclass(frozen=True)
@@ -115,9 +131,12 @@ class SimulatorConfig:
     interval_seconds: float = 30.0
     seed: int = 20260910
     timeout_seconds: float = 10.0
+    kafka_bootstrap_servers: str = ""
+    kafka_topic: str = ""
+    kafka_client_id: str = "roboops-telemetry-simulator"
 
     @classmethod
-    def from_environment(cls) -> "SimulatorConfig":
+    def from_environment(cls, transport: str = "http") -> "SimulatorConfig":
         raw = os.environ.get("ROBOOPS_SIMULATOR_SENSORS", "")
         if not raw:
             raise SimulatorConfigError("ROBOOPS_SIMULATOR_SENSORS is required")
@@ -130,10 +149,15 @@ class SimulatorConfig:
         if interval < 0 or timeout <= 0:
             raise SimulatorConfigError("interval must be non-negative and timeout must be positive")
         values = {name: os.environ.get(name, "").strip() for name in ("ROBOOPS_API_URL", "ROBOOPS_SIMULATOR_EMAIL", "ROBOOPS_SIMULATOR_PASSWORD")}
+        kafka_bootstrap_servers = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "").strip()
+        kafka_topic = os.environ.get("KAFKA_TELEMETRY_TOPIC", "").strip()
+        kafka_client_id = os.environ.get("KAFKA_CLIENT_ID", "roboops-telemetry-simulator").strip()
+        if transport == "kafka" and (not kafka_bootstrap_servers or not kafka_topic or not kafka_client_id):
+            raise SimulatorConfigError("KAFKA_BOOTSTRAP_SERVERS, KAFKA_TELEMETRY_TOPIC, and KAFKA_CLIENT_ID are required for Kafka transport")
         missing = [name for name, value in values.items() if not value]
-        if missing:
+        if transport == "http" and missing:
             raise SimulatorConfigError(f"missing required simulator settings: {', '.join(missing)}")
-        return cls(values["ROBOOPS_API_URL"].rstrip("/"), values["ROBOOPS_SIMULATOR_EMAIL"], values["ROBOOPS_SIMULATOR_PASSWORD"], parse_sensor_configuration(raw), interval, seed, timeout)
+        return cls(values["ROBOOPS_API_URL"].rstrip("/"), values["ROBOOPS_SIMULATOR_EMAIL"], values["ROBOOPS_SIMULATOR_PASSWORD"], parse_sensor_configuration(raw), interval, seed, timeout, kafka_bootstrap_servers, kafka_topic, kafka_client_id)
 
 
 class TelemetryGenerator:
@@ -185,14 +209,14 @@ class TelemetryGenerator:
                 LOGGER.info("robot %s is offline; skipping cycle %s", sensor.robot_code, cycle)
                 continue
             event_key = f"{self.run_id}:{sensor.sensor_id}:{cycle}".encode()
-            event_id = f"sim:{hashlib.sha256(event_key).hexdigest()}"
-            events.append(TelemetryEvent(sensor.sensor_id, sensor.robot_id, sensor.robot_code, sensor.sensor_type, sensor.unit, self._value(sensor, status), observed_at, event_id))
+            digest = hashlib.sha256(event_key).hexdigest()
+            event_id = f"sim-event:{digest}"
+            source_event_id = f"sim-source:{digest}"
+            events.append(TelemetryEvent(sensor.sensor_id, sensor.robot_id, sensor.robot_code, sensor.sensor_type, sensor.unit, self._value(sensor, status), observed_at, event_id, source_event_id))
         return events
 
 
 class TelemetryTransport(Protocol):
-    def login(self) -> None: ...
-    def robot_statuses(self) -> dict[uuid.UUID, str]: ...
     def send(self, event: TelemetryEvent) -> IngestionResult: ...
 
 
@@ -270,7 +294,8 @@ class TelemetrySimulator:
         self.disabled_sensors: set[uuid.UUID] = set()
 
     def cycle(self, cycle_number: int) -> None:
-        statuses = self.transport.robot_statuses()
+        status_provider = getattr(self.transport, "robot_statuses", None)
+        statuses = status_provider() if status_provider is not None else {sensor.robot_id: "active" for sensor in self.generator.sensors}
         for event in self.generator.generate_cycle(statuses, cycle_number, self.clock()):
             if event.sensor_id in self.disabled_sensors or event.robot_id in self.generator.disabled_robots:
                 continue
@@ -290,6 +315,7 @@ class TelemetrySimulator:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Send realistic telemetry through the RoboOps HTTP API")
+    parser.add_argument("--transport", choices=("http", "kafka"), default="http")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--once", action="store_true", help="send exactly one cycle")
     group.add_argument("--cycles", type=int, help="send exactly N cycles")
@@ -298,8 +324,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    config = SimulatorConfig.from_environment()
     args = build_parser().parse_args(argv)
+    config = SimulatorConfig.from_environment(args.transport)
     cycles = 1 if args.once or args.cycles is None else args.cycles
     interval = config.interval_seconds if args.interval is None else args.interval
     if cycles < 1:
@@ -307,10 +333,18 @@ def main(argv: list[str] | None = None) -> int:
     if interval < 0:
         raise SystemExit("--interval must be non-negative")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    transport = HttpTelemetryTransport(config.api_url, config.email, config.password, config.timeout_seconds)
-    transport.login()
+    if args.transport == "http":
+        transport = HttpTelemetryTransport(config.api_url, config.email, config.password, config.timeout_seconds)
+        transport.login()
+    else:
+        transport = KafkaTelemetryTransport(config.kafka_bootstrap_servers, config.kafka_topic, config.kafka_client_id, delivery_timeout_seconds=config.timeout_seconds)
     simulator = TelemetrySimulator(TelemetryGenerator(config.sensors, random.Random(config.seed)), transport)
-    simulator.run(cycles, interval)
+    try:
+        simulator.run(cycles, interval)
+    finally:
+        close = getattr(transport, "close", None)
+        if close is not None:
+            close()
     return 0
 
 

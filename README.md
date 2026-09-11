@@ -90,6 +90,22 @@ python -m scripts.telemetry_simulator --cycles 5 --interval 10
 The simulator uses the existing human-user operator JWT flow for development;
 this is not device authentication. Kafka and device identity are future work.
 
+### Phase 8A: Kafka telemetry producer
+
+The simulator also supports an explicit Kafka transport for versioned telemetry
+events. HTTP remains the default and continues to use the existing operator
+JWT flow. Kafka mode does not log in over HTTP or carry a JWT:
+
+```bash
+python -m scripts.telemetry_simulator --transport kafka --once
+python -m scripts.telemetry_simulator --transport kafka --cycles 5 --interval 10
+```
+
+Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`, and
+`KAFKA_CLIENT_ID`. Phase 8A publishes compact JSON envelope version 1 events
+with `acks=all` and bounded delivery retries. A Kafka consumer, DLQ, and local
+broker are separate future work; delivery is not claimed to be exactly once.
+
 ## Phase 2: database foundation
 
 Phase 2 adds the persistent database layer on top of the Phase 1 scaffolding: SQLAlchemy 2.x models, Alembic migrations, Pydantic v2 schemas, a deterministic seed script, and dedicated test databases. Nothing in this section changes Phase 1 routes or behavior.
