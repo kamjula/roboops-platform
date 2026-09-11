@@ -181,14 +181,14 @@ jobs:
           from confluent_kafka.admin import AdminClient, NewTopic
 
           admin = AdminClient({"bootstrap.servers": "localhost:9092"})
-            topics = ["roboops.telemetry.readings.v1", "roboops.telemetry.readings.dlq.v1"]
-            futures = admin.create_topics([NewTopic(topic, num_partitions=1, replication_factor=1) for topic in topics])
-            for topic, future in futures.items():
-              try:
-                future.result()
-              except KafkaException as exc:
-                if exc.args[0].code().name != "TOPIC_ALREADY_EXISTS":
-                  raise
+          topics = ["roboops.telemetry.readings.v1", "roboops.telemetry.readings.dlq.v1"]
+          futures = admin.create_topics([NewTopic(topic, num_partitions=1, replication_factor=1) for topic in topics])
+          for topic, future in futures.items():
+            try:
+              future.result()
+            except KafkaException as exc:
+              if exc.args[0].code().name != "TOPIC_ALREADY_EXISTS":
+                raise
           PY
       - name: Run migrations
         run: alembic upgrade head
