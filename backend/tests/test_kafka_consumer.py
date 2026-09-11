@@ -67,6 +67,21 @@ class FakeConsumer:
         self.closed = True
 
 
+class FakeDlqPublisher:
+    def __init__(self, fail=False):
+        self.fail = fail
+        self.events = []
+        self.closed = False
+
+    def publish(self, envelope, key=None):
+        if self.fail:
+            raise RuntimeError("DLQ unavailable")
+        self.events.append((envelope, key))
+
+    def close(self):
+        self.closed = True
+
+
 def event_payload():
     return TelemetryEventEnvelope(
         event_version=1,
@@ -123,16 +138,18 @@ def test_duplicate_replay_result_is_success_and_commits():
 
 def test_validation_failure_does_not_hit_service_or_commit():
     consumer = FakeConsumer()
+    dlq = FakeDlqPublisher()
     calls = []
     processor = KafkaTelemetryConsumer(
         KafkaConsumerConfig("localhost:9092"),
         consumer=consumer,
         ingest=lambda db, payload: calls.append(payload),
+        dlq_publisher=dlq,
     )
-    with pytest.raises(PermanentTelemetryEventError):
-        processor.process_message(FakeMessage(b"not-json"))
+    processor.process_message(FakeMessage(b"not-json"))
     assert calls == []
-    assert consumer.commits == []
+    assert len(consumer.commits) == 1
+    assert dlq.events[0][0].failure_class == "invalid_envelope"
 
 
 def test_persistence_failure_rolls_back_and_does_not_commit():
@@ -142,7 +159,7 @@ def test_persistence_failure_rolls_back_and_does_not_commit():
     def fail(db, payload):
         raise RuntimeError("database unavailable")
 
-    processor = KafkaTelemetryConsumer(KafkaConsumerConfig("localhost:9092"), consumer=consumer, session_factory=lambda: session, ingest=fail)
+    processor = KafkaTelemetryConsumer(KafkaConsumerConfig("localhost:9092", retry_count=0), consumer=consumer, session_factory=lambda: session, ingest=fail)
     with pytest.raises(TransientTelemetryPersistenceError):
         processor.process_message(FakeMessage(event_payload()))
     assert session.rollback_calls == 1
@@ -156,6 +173,71 @@ def test_close_and_shutdown():
     assert processor.running is False
     processor.close()
     assert consumer.closed is True
+
+
+def test_domain_failure_goes_to_dlq_and_commits():
+    consumer = FakeConsumer()
+    dlq = FakeDlqPublisher()
+    processor = KafkaTelemetryConsumer(
+        KafkaConsumerConfig("localhost:9092"),
+        consumer=consumer,
+        session_factory=FakeSession,
+        ingest=lambda db, payload: (_ for _ in ()).throw(__import__("app.services.exceptions", fromlist=["NotFoundError"]).NotFoundError("Sensor missing")),
+        dlq_publisher=dlq,
+    )
+    processor.process_message(FakeMessage(event_payload()))
+    assert dlq.events[0][0].failure_class == "unknown_sensor"
+    assert len(consumer.commits) == 1
+
+
+def test_dlq_failure_does_not_commit():
+    consumer = FakeConsumer()
+    processor = KafkaTelemetryConsumer(
+        KafkaConsumerConfig("localhost:9092"),
+        consumer=consumer,
+        dlq_publisher=FakeDlqPublisher(fail=True),
+    )
+    with pytest.raises(RuntimeError, match="DLQ unavailable"):
+        processor.process_message(FakeMessage(b"not-json"))
+    assert consumer.commits == []
+
+
+def test_transient_failure_retries_and_eventually_commits():
+    consumer = FakeConsumer()
+    session = FakeSession()
+    attempts = []
+    sleeps = []
+
+    def ingest(db, payload):
+        attempts.append(payload)
+        if len(attempts) == 1:
+            raise RuntimeError("database unavailable")
+
+    processor = KafkaTelemetryConsumer(
+        KafkaConsumerConfig("localhost:9092", retry_count=2, retry_backoff_seconds=0.1),
+        consumer=consumer,
+        session_factory=lambda: session,
+        ingest=ingest,
+        sleep=sleeps.append,
+    )
+    processor.process_message(FakeMessage(event_payload()))
+    assert len(attempts) == 2
+    assert sleeps == [0.1]
+    assert len(consumer.commits) == 1
+
+
+def test_transient_failure_exhaustion_does_not_commit():
+    consumer = FakeConsumer()
+    processor = KafkaTelemetryConsumer(
+        KafkaConsumerConfig("localhost:9092", retry_count=2, retry_backoff_seconds=0),
+        consumer=consumer,
+        session_factory=FakeSession,
+        ingest=lambda db, payload: (_ for _ in ()).throw(RuntimeError("database unavailable")),
+        sleep=lambda _: None,
+    )
+    with pytest.raises(TransientTelemetryPersistenceError):
+        processor.process_message(FakeMessage(event_payload()))
+    assert consumer.commits == []
 
 
 def test_consumer_configuration_disables_auto_commit():

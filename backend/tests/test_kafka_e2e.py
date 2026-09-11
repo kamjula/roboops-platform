@@ -11,7 +11,7 @@ from confluent_kafka import Consumer, TopicPartition
 
 from app.models import Robot, RobotModel, RobotStatus, Sensor, SensorReading, SensorType, Site
 from app.streaming.kafka_consumer import KafkaConsumerConfig, KafkaTelemetryConsumer
-from app.streaming.kafka_producer import KafkaTelemetryTransport
+from app.streaming.kafka_producer import KafkaDlqPublisher, KafkaTelemetryTransport
 from app.streaming.telemetry_events import TelemetryEventEnvelope
 
 pytestmark = pytest.mark.skipif(
@@ -102,9 +102,28 @@ def test_real_kafka_event_persists_and_replays_idempotently(db_session):
     )
     group_id = f"roboops-kafka-e2e-{uuid.uuid4()}"
     consumer = KafkaTelemetryConsumer(
-        KafkaConsumerConfig(os.environ["KAFKA_BOOTSTRAP_SERVERS"], topic=TOPIC, group_id=group_id),
+        KafkaConsumerConfig(
+            os.environ["KAFKA_BOOTSTRAP_SERVERS"],
+            topic=TOPIC,
+            group_id=group_id,
+            dlq_topic=os.environ.get("KAFKA_TELEMETRY_DLQ_TOPIC", "roboops.telemetry.readings.dlq.v1"),
+        ),
         session_factory=lambda: _NonClosingSession(db_session),
+        dlq_publisher=KafkaDlqPublisher(
+            os.environ["KAFKA_BOOTSTRAP_SERVERS"],
+            os.environ.get("KAFKA_TELEMETRY_DLQ_TOPIC", "roboops.telemetry.readings.dlq.v1"),
+            "roboops-kafka-e2e-dlq",
+        ),
     )
+    dlq_consumer = Consumer(
+        {
+            "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVERS"],
+            "group.id": f"roboops-kafka-e2e-dlq-{uuid.uuid4()}",
+            "auto.offset.reset": "earliest",
+            "enable.auto.commit": False,
+        }
+    )
+    dlq_consumer.subscribe([os.environ.get("KAFKA_TELEMETRY_DLQ_TOPIC", "roboops.telemetry.readings.dlq.v1")])
     consumer.subscribe()
     try:
         producer.send(event)
@@ -124,6 +143,27 @@ def test_real_kafka_event_persists_and_replays_idempotently(db_session):
         assert len(readings) == 1
         assert readings[0].id == first_id
         assert readings[0].value == event.value
+
+        poison = TelemetryEventEnvelope(
+            event_version=1,
+            event_type="telemetry.reading",
+            event_id=f"e2e-poison-{uuid.uuid4()}",
+            sensor_id=uuid.uuid4(),
+            observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            value=1.0,
+            source_event_id=f"e2e-poison-source-{uuid.uuid4()}",
+            produced_at=datetime(2026, 1, 1, 0, 0, 2, tzinfo=timezone.utc),
+        )
+        producer.send(poison)
+        poison_message = _poll_message(consumer.consumer)
+        consumer.process_message(poison_message)
+        assert _committed_offset(consumer.consumer, poison_message) == poison_message.offset() + 1
+        dlq_message = _poll_message(dlq_consumer)
+        dlq_payload = __import__("json").loads(dlq_message.value())
+        assert dlq_payload["failure_class"] == "unknown_sensor"
+        assert dlq_payload["original_event_id"] == poison.event_id
+        assert dlq_payload["original_source_event_id"] == poison.source_event_id
     finally:
+        dlq_consumer.close()
         consumer.close()
         producer.close()

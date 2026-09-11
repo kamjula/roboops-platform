@@ -103,8 +103,8 @@ python -m scripts.telemetry_simulator --transport kafka --cycles 5 --interval 10
 
 Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`, and
 `KAFKA_CLIENT_ID`. Phase 8A publishes compact JSON envelope version 1 events
-with `acks=all` and bounded delivery retries. A Kafka consumer, DLQ, and local
-broker are separate future work; delivery is not claimed to be exactly once.
+with `acks=all` and bounded delivery retries. Delivery is not claimed to be
+exactly once.
 
 ### Phase 8B: Kafka telemetry consumer
 
@@ -119,8 +119,8 @@ python -m scripts.telemetry_consumer
 
 Configure `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TELEMETRY_TOPIC`,
 `KAFKA_CONSUMER_GROUP`, `KAFKA_POLL_TIMEOUT_SECONDS`, and
-`KAFKA_CONSUMER_CLIENT_ID`. Phase 8B uses at-least-once processing; it does not
-add a broker, DLQ, or claim exactly-once delivery.
+`KAFKA_CONSUMER_CLIENT_ID`. Phase 8B uses at-least-once processing and commits
+offsets only after persistence or idempotent duplicate handling.
 
 ### Phase 8C: local Redpanda end-to-end telemetry
 
@@ -154,9 +154,14 @@ KAFKA_BOOTSTRAP_SERVERS=localhost:9092 python -m scripts.telemetry_simulator --t
 
 Verify the reading through the existing authenticated telemetry APIs or the
 PostgreSQL workflow. Phase 8C uses at-least-once delivery and
-`source_event_id` application-level idempotency. Local Redpanda has no TLS or
-SASL; production TLS/SASL/ACLs, DLQ handling, and permanent poison-message
-handling are future work. Exactly-once delivery is not claimed.
+`source_event_id` application-level idempotency. Phase 8D classifies malformed,
+invalid, unknown-sensor, decommissioned-robot, and idempotency-conflict events
+as permanent failures, publishes them to
+`roboops.telemetry.readings.dlq.v1`, and commits the original offset only after
+DLQ acknowledgement. Transient persistence failures are retried boundedly and
+remain uncommitted if retries are exhausted. Local Redpanda has no TLS or
+SASL; production TLS/SASL/ACLs remain future work. Exactly-once delivery is
+not claimed.
 
 ## Phase 2: database foundation
 
