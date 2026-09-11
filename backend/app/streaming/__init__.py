@@ -1,0 +1,1 @@
+"""Streaming event contracts and transports."""
