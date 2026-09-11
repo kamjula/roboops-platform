@@ -70,6 +70,26 @@ Backend: `cd backend`, create/activate a virtual environment, `pip install -r re
 
 Frontend: `cd frontend`, `npm install`, then `npm run dev`.
 
+### Phase 7B: HTTP telemetry simulator
+
+The development simulator generates stateful battery and temperature readings
+and sends them through `POST /api/v1/telemetry/readings`. It never writes to
+PostgreSQL directly. Configure `ROBOOPS_API_URL`,
+`ROBOOPS_SIMULATOR_EMAIL`, `ROBOOPS_SIMULATOR_PASSWORD`, and
+`ROBOOPS_SIMULATOR_SENSORS` as a JSON array of explicit sensor, robot, type,
+and unit records. Optional settings include `ROBOOPS_SIMULATOR_INTERVAL_SECONDS`,
+`ROBOOPS_SIMULATOR_SEED`, and `ROBOOPS_SIMULATOR_TIMEOUT_SECONDS`.
+
+From `backend/`, send one cycle or a fixed number of cycles:
+
+```bash
+python -m scripts.telemetry_simulator --once
+python -m scripts.telemetry_simulator --cycles 5 --interval 10
+```
+
+The simulator uses the existing human-user operator JWT flow for development;
+this is not device authentication. Kafka and device identity are future work.
+
 ## Phase 2: database foundation
 
 Phase 2 adds the persistent database layer on top of the Phase 1 scaffolding: SQLAlchemy 2.x models, Alembic migrations, Pydantic v2 schemas, a deterministic seed script, and dedicated test databases. Nothing in this section changes Phase 1 routes or behavior.
