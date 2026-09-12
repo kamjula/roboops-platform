@@ -113,3 +113,7 @@ export async function getLatestAlerts({ limit } = {}) {
 export async function getHealthSummary() {
   return request("/api/v1/dashboard/health-summary");
 }
+
+export async function getRobotHealth() {
+  return request("/api/v1/dashboard/robot-health");
+}

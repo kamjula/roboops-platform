@@ -4,6 +4,7 @@ import Robots from "../pages/Robots.jsx";
 
 const api = vi.hoisted(() => ({
   getRobots: vi.fn(),
+  getRobotHealth: vi.fn(),
   updateRobotStatus: vi.fn(),
 }));
 const auth = vi.hoisted(() => ({ user: { email: "viewer@example.com", role: "viewer" } }));
@@ -30,7 +31,9 @@ function renderPage(role = "viewer") {
 describe("Robots page", () => {
   beforeEach(() => {
     api.getRobots.mockReset();
+    api.getRobotHealth.mockReset();
     api.updateRobotStatus.mockReset();
+    api.getRobotHealth.mockResolvedValue({ robots: [] });
     auth.user = { email: "viewer@example.com", role: "viewer" };
   });
 
@@ -43,6 +46,17 @@ describe("Robots page", () => {
     expect(screen.getByText("site-1")).toBeInTheDocument();
     expect(screen.getByText("model-1")).toBeInTheDocument();
     expect(screen.getByText("1 robot")).toBeInTheDocument();
+  });
+
+  it("renders aggregate telemetry health without per-robot requests", async () => {
+    api.getRobots.mockResolvedValue([robot]);
+    api.getRobotHealth.mockResolvedValue({
+      robots: [{ robot_id: "robot-1", health_state: "warning", reason_codes: ["battery_low"] }],
+    });
+    renderPage();
+    expect(await screen.findByText("warning")).toBeInTheDocument();
+    expect(screen.getByText("battery_low")).toBeInTheDocument();
+    expect(api.getRobotHealth).toHaveBeenCalledTimes(1);
   });
 
   it("renders loading state", () => {

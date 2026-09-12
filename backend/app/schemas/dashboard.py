@@ -82,6 +82,33 @@ class HealthSummaryResponse(BaseModel):
     maintenance_overdue_count: int
 
 
+class SensorHealthSnapshot(BaseModel):
+    state: str
+    value: float | None
+    unit: str | None
+    observed_at: datetime | None
+    age_seconds: int | None
+    freshness: str
+    reason_codes: list[str]
+
+
+class RobotHealthItem(BaseModel):
+    robot_id: uuid.UUID
+    robot_code: str
+    robot_name: str
+    operational_status: str
+    health_state: str
+    reason_codes: list[str]
+    battery: SensorHealthSnapshot | None
+    temperature: SensorHealthSnapshot | None
+
+
+class RobotHealthResponse(BaseModel):
+    as_of: datetime
+    freshness_threshold_seconds: int
+    robots: list[RobotHealthItem]
+
+
 class MaintenanceSummaryResponse(BaseModel):
     """Maintenance due/overdue/completed counts.
 

@@ -3,7 +3,7 @@ import Header from "../components/layout/Header.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getRobots, updateRobotStatus } from "../services/api.js";
+import { getRobotHealth, getRobots, updateRobotStatus } from "../services/api.js";
 
 const OPERATIONAL_STATUSES = ["active", "idle", "maintenance", "offline"];
 
@@ -66,6 +66,14 @@ function RobotRow({ robot, canChangeStatus, onStatusChange }) {
 			<td>{robot.site_id || "-"}</td>
 			<td>{robot.model_id || "-"}</td>
 			<td><StatusBadge status={robot.status} /></td>
+			<td>
+				{robot.health ? (
+					<div>
+						<strong>{robot.health.health_state}</strong>
+						<div>{robot.health.reason_codes.join(", ")}</div>
+					</div>
+				) : "unknown"}
+			</td>
 			<td>{formatDate(robot.installed_at)}</td>
 			<td>
 				{showControl ? (
@@ -101,7 +109,8 @@ export default function Robots() {
 		setLoading(true);
 		setError(null);
 		try {
-			setRobots(await getRobots());
+			const [robotData, healthData] = await Promise.all([getRobots(), getRobotHealth()]);
+			setRobots(robotData.map((robot) => ({ ...robot, health: healthData?.robots?.find((item) => item.robot_id === robot.id) })));
 		} catch (requestError) {
 			setError(requestError);
 		} finally {
@@ -115,7 +124,7 @@ export default function Robots() {
 
 	const replaceRobot = (updatedRobot) => {
 		setRobots((currentRobots) => currentRobots.map((robot) => (
-			robot.id === updatedRobot.id ? updatedRobot : robot
+			robot.id === updatedRobot.id ? { ...updatedRobot, health: robot.health } : robot
 		)));
 	};
 
@@ -142,6 +151,7 @@ export default function Robots() {
 								<th scope="col">Site ID</th>
 								<th scope="col">Model ID</th>
 								<th scope="col">Status</th>
+								<th scope="col">Telemetry Health</th>
 								<th scope="col">Installed</th>
 								<th scope="col">Actions</th>
 							</tr>

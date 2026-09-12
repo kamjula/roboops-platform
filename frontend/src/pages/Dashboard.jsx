@@ -24,7 +24,7 @@ export default function Dashboard() {
           <SummaryCards summary={data.summary} maintenanceSummary={data.maintenanceSummary} />
           <div className="dashboard-grid">
             <RobotStatusChart robotStatus={data.robotStatus} />
-            <HealthSummaryPanel healthSummary={data.healthSummary} />
+            <HealthSummaryPanel healthSummary={data.healthSummary} robotHealth={data.robotHealth} />
             <RecentAlerts alerts={data.latestAlerts} />
             <MaintenancePanel maintenanceSummary={data.maintenanceSummary} />
             <SiteSummaryPanel siteSummary={data.siteSummary} />
