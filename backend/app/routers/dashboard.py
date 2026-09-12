@@ -17,8 +17,10 @@ from app.schemas.dashboard import (
     MaintenanceSummaryResponse,
     RobotStatusCounts,
     SiteSummaryItem,
+    RobotHealthResponse,
 )
 from app.services import dashboard_service
+from app.services import robot_health_service
 
 router = APIRouter(
     prefix="/api/v1/dashboard",
@@ -52,6 +54,11 @@ def read_latest_alerts(
 def read_health_summary(db: Session = Depends(get_db)) -> HealthSummaryResponse:
     """Fleet health summary. No normalized health score exists in the schema."""
     return dashboard_service.get_health_summary(db)
+
+
+@router.get("/robot-health", response_model=RobotHealthResponse)
+def read_robot_health(db: Session = Depends(get_db)) -> RobotHealthResponse:
+    return robot_health_service.get_robot_health(db)
 
 
 @router.get("/site-summary", response_model=list[SiteSummaryItem])
