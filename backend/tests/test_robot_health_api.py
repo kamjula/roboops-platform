@@ -17,9 +17,9 @@ def test_robot_health_is_authenticated_set_based_and_explicit(client, db_session
     db_session.add_all([site, model])
     db_session.commit()
     robot = Robot(
-        robot_code=f"HEALTH-ROBOT-{uuid.uuid4().hex[:8]}",
+        robot_code=f"HR-{uuid.uuid4().hex[:8]}",
         name="Health Robot",
-        serial_number=f"HEALTH-SERIAL-{uuid.uuid4().hex[:8]}",
+        serial_number=f"HS-{uuid.uuid4().hex[:8]}",
         model_id=model.id,
         site_id=site.id,
         status=RobotStatus.MAINTENANCE,
