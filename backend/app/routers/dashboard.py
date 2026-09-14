@@ -18,9 +18,11 @@ from app.schemas.dashboard import (
     RobotStatusCounts,
     SiteSummaryItem,
     RobotHealthResponse,
+    TelemetryAnomalySummaryResponse,
 )
 from app.services import dashboard_service
 from app.services import robot_health_service
+from app.services import telemetry_anomaly_service
 
 router = APIRouter(
     prefix="/api/v1/dashboard",
@@ -59,6 +61,26 @@ def read_health_summary(db: Session = Depends(get_db)) -> HealthSummaryResponse:
 @router.get("/robot-health", response_model=RobotHealthResponse)
 def read_robot_health(db: Session = Depends(get_db)) -> RobotHealthResponse:
     return robot_health_service.get_robot_health(db)
+
+
+@router.get(
+    "/telemetry-anomalies",
+    response_model=TelemetryAnomalySummaryResponse,
+)
+def read_telemetry_anomalies(
+    lookback_hours: int = Query(
+        24,
+        ge=1,
+        le=168,
+        description="Historical telemetry lookback window in hours (1-168).",
+    ),
+    db: Session = Depends(get_db),
+) -> TelemetryAnomalySummaryResponse:
+    """Deterministic telemetry anomaly summary for supported sensors."""
+    return telemetry_anomaly_service.get_anomaly_summary(
+        db,
+        lookback_hours=lookback_hours,
+    )
 
 
 @router.get("/site-summary", response_model=list[SiteSummaryItem])
