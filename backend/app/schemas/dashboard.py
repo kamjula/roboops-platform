@@ -152,9 +152,9 @@ class LatestAlertItem(BaseModel):
     created_at: datetime
 
 class AnomalyEvent(BaseModel):
-    reading_id: UUID
-    robot_id: UUID
-    sensor_id: UUID
+    reading_id: uuid.UUID
+    robot_id: uuid.UUID
+    sensor_id: uuid.UUID
     sensor_type: str
     value: float
     severity: str
