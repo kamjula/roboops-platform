@@ -151,6 +151,7 @@ class LatestAlertItem(BaseModel):
     resolved_at: datetime | None
     created_at: datetime
 
+
 class AnomalyEvent(BaseModel):
     reading_id: uuid.UUID
     robot_id: uuid.UUID
@@ -170,3 +171,5 @@ class TelemetryAnomalySummaryResponse(BaseModel):
     severity_counts: dict[str, int]
     reason_counts: dict[str, int]
     anomaly_events: list[AnomalyEvent]
+    anomaly_event_limit: int
+    anomaly_events_truncated: bool
