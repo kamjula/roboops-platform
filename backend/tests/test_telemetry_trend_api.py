@@ -30,28 +30,17 @@ def test_telemetry_trends_requires_authentication(unauthenticated_client):
 
 
 def test_telemetry_trends_validates_lookback(client):
-    response = client.get(
-        "/api/v1/dashboard/telemetry-trends?lookback_hours=0"
-    )
+    response = client.get("/api/v1/dashboard/telemetry-trends?lookback_hours=0")
     assert response.status_code == 422
 
 
 def test_telemetry_trends_rejects_invalid_robot_uuid(client):
-    response = client.get(
-        "/api/v1/dashboard/telemetry-trends?robot_id=not-a-uuid"
-    )
+    response = client.get("/api/v1/dashboard/telemetry-trends?robot_id=not-a-uuid")
     assert response.status_code == 422
 
 
-def test_telemetry_trends_real_query_path(client, db_session):
-    now = datetime.now(timezone.utc)
-    suffix = uuid.uuid4().hex[:8]
-
-    site = Site(
-        site_code=f"TR-{suffix}",
-        name="Trend Site",
-        timezone="UTC",
-    )
+def _create_trend_fixture(db_session, *, suffix: str):
+    site = Site(site_code=f"TR-{suffix}", name="Trend Site", timezone="UTC")
     model = RobotModel(
         model_code=f"TM-{suffix}",
         manufacturer="Acme",
@@ -108,65 +97,26 @@ def test_telemetry_trends_real_query_path(client, db_session):
     )
     db_session.add_all([battery, temperature, vibration, other_battery])
     db_session.commit()
+    return robot, other_robot, battery, temperature, vibration, other_battery
+
+
+def test_telemetry_trends_real_query_path(client, db_session):
+    now = datetime.now(timezone.utc)
+    suffix = uuid.uuid4().hex[:8]
+    robot, _, battery, temperature, vibration, other_battery = _create_trend_fixture(
+        db_session, suffix=suffix
+    )
 
     db_session.add_all(
         [
-            SensorReading(
-                sensor_id=battery.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=30),
-                value=70.0,
-                source_event_id=f"trend-bat-1-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=battery.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=20),
-                value=60.0,
-                source_event_id=f"trend-bat-2-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=battery.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=10),
-                value=50.0,
-                source_event_id=f"trend-bat-3-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=temperature.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=25),
-                value=30.0,
-                source_event_id=f"trend-temp-1-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=temperature.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=5),
-                value=40.0,
-                source_event_id=f"trend-temp-2-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=vibration.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(minutes=15),
-                value=9.0,
-                source_event_id=f"trend-vib-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=battery.id,
-                robot_id=robot.id,
-                recorded_at=now - timedelta(hours=25),
-                value=10.0,
-                source_event_id=f"trend-old-{suffix}",
-            ),
-            SensorReading(
-                sensor_id=other_battery.id,
-                robot_id=other_robot.id,
-                recorded_at=now - timedelta(minutes=10),
-                value=90.0,
-                source_event_id=f"trend-other-{suffix}",
-            ),
+            SensorReading(sensor_id=battery.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=30), value=70.0, source_event_id=f"trend-bat-1-{suffix}"),
+            SensorReading(sensor_id=battery.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=20), value=60.0, source_event_id=f"trend-bat-2-{suffix}"),
+            SensorReading(sensor_id=battery.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=10), value=50.0, source_event_id=f"trend-bat-3-{suffix}"),
+            SensorReading(sensor_id=temperature.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=25), value=30.0, source_event_id=f"trend-temp-1-{suffix}"),
+            SensorReading(sensor_id=temperature.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=5), value=40.0, source_event_id=f"trend-temp-2-{suffix}"),
+            SensorReading(sensor_id=vibration.id, robot_id=robot.id, recorded_at=now - timedelta(minutes=15), value=9.0, source_event_id=f"trend-vib-{suffix}"),
+            SensorReading(sensor_id=battery.id, robot_id=robot.id, recorded_at=now - timedelta(hours=25), value=10.0, source_event_id=f"trend-old-{suffix}"),
+            SensorReading(sensor_id=other_battery.id, robot_id=other_battery.robot_id, recorded_at=now - timedelta(minutes=10), value=90.0, source_event_id=f"trend-other-{suffix}"),
         ]
     )
     db_session.commit()
@@ -174,7 +124,6 @@ def test_telemetry_trends_real_query_path(client, db_session):
     response = client.get(
         f"/api/v1/dashboard/telemetry-trends?lookback_hours=24&robot_id={robot.id}"
     )
-
     assert response.status_code == 200
     body = response.json()
     assert body["lookback_hours"] == 24
@@ -203,3 +152,49 @@ def test_telemetry_trends_real_query_path(client, db_session):
     assert temperature_series["avg_value"] == 35.0
     assert temperature_series["latest_value"] == 40.0
     assert [point["value"] for point in temperature_series["points"]] == [30.0, 40.0]
+
+
+def test_telemetry_trends_fairly_allocates_global_point_cap(client, db_session):
+    now = datetime.now(timezone.utc)
+    suffix = uuid.uuid4().hex[:8]
+    robot, _, battery, temperature, _, _ = _create_trend_fixture(db_session, suffix=suffix)
+
+    readings = []
+    per_sensor = (MAX_TREND_POINTS // 2) + 100
+    for index in range(per_sensor):
+        recorded_at = now - timedelta(seconds=index)
+        readings.append(
+            SensorReading(
+                sensor_id=battery.id,
+                robot_id=robot.id,
+                recorded_at=recorded_at,
+                value=50.0 + (index % 10),
+                source_event_id=f"cap-b-{suffix}-{index}",
+            )
+        )
+        readings.append(
+            SensorReading(
+                sensor_id=temperature.id,
+                robot_id=robot.id,
+                recorded_at=recorded_at,
+                value=30.0 + (index % 5),
+                source_event_id=f"cap-t-{suffix}-{index}",
+            )
+        )
+    db_session.add_all(readings)
+    db_session.commit()
+
+    response = client.get(
+        f"/api/v1/dashboard/telemetry-trends?lookback_hours=24&robot_id={robot.id}"
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_readings"] == per_sensor * 2
+    assert body["points_truncated"] is True
+    assert sum(len(series["points"]) for series in body["series"]) == MAX_TREND_POINTS
+
+    by_type = {series["sensor_type"]: series for series in body["series"]}
+    assert len(by_type["battery"]["points"]) == MAX_TREND_POINTS // 2
+    assert len(by_type["temperature"]["points"]) == MAX_TREND_POINTS // 2
+    assert by_type["battery"]["points"]
+    assert by_type["temperature"]["points"]
