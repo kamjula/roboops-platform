@@ -27,6 +27,33 @@ def _sensor_type_value(value) -> str:
     return value.value if hasattr(value, "value") else str(value)
 
 
+def _allocate_point_limits(summary_rows) -> dict[uuid.UUID, int]:
+    """Allocate the global point budget fairly across non-empty sensor series."""
+    if not summary_rows:
+        return {}
+
+    ordered = [(row.sensor_id, int(row.reading_count)) for row in summary_rows]
+    allocations = {sensor_id: 0 for sensor_id, _ in ordered}
+    remaining = MAX_TREND_POINTS
+    active = [(sensor_id, count) for sensor_id, count in ordered if count > 0]
+
+    while remaining > 0 and active:
+        share = max(1, remaining // len(active))
+        next_active = []
+        for sensor_id, count in active:
+            needed = count - allocations[sensor_id]
+            grant = min(share, needed, remaining)
+            allocations[sensor_id] += grant
+            remaining -= grant
+            if allocations[sensor_id] < count:
+                next_active.append((sensor_id, count))
+            if remaining == 0:
+                break
+        active = next_active
+
+    return allocations
+
+
 def get_telemetry_trends(
     db: Session,
     *,
@@ -36,8 +63,9 @@ def get_telemetry_trends(
 ) -> dict:
     """Return truthful per-sensor summaries plus bounded recent trend points.
 
-    Summary statistics cover the complete requested window. Returned raw
-    trend points are globally capped so the API response remains bounded.
+    Summary statistics cover the complete requested window. The global raw
+    point budget is allocated across sensor series so one high-volume sensor
+    cannot starve other valid series from the chart payload.
     """
 
     as_of = _normalize_as_of(as_of)
@@ -98,44 +126,46 @@ def get_telemetry_trends(
         for row in latest_rows
     }
 
-    point_rows = db.execute(
-        select(
-            SensorReading.sensor_id,
-            SensorReading.value,
-            SensorReading.recorded_at,
-            SensorReading.id,
-        )
-        .join(Sensor, Sensor.id == SensorReading.sensor_id)
-        .where(*filters)
-        .order_by(
-            SensorReading.recorded_at.desc(),
-            SensorReading.id.desc(),
-        )
-        .limit(MAX_TREND_POINTS + 1)
-    ).all()
-
-    points_truncated = len(point_rows) > MAX_TREND_POINTS
-    point_rows = point_rows[:MAX_TREND_POINTS]
-
+    point_limits = _allocate_point_limits(summary_rows)
     points_by_sensor: dict[uuid.UUID, list[dict]] = {}
-    for row in point_rows:
-        points_by_sensor.setdefault(row.sensor_id, []).append(
-            {
-                "recorded_at": row.recorded_at,
-                "value": row.value,
-            }
-        )
+    returned_point_count = 0
 
-    # The query is newest-first for the global cap; each returned series is
-    # exposed oldest-first so clients can plot it directly.
-    for points in points_by_sensor.values():
-        points.reverse()
+    # Query each summarized series using its fair share of the global budget.
+    # This keeps the response bounded and prevents a noisy sensor from making
+    # another valid series appear to have no historical points.
+    for row in summary_rows:
+        limit = point_limits.get(row.sensor_id, 0)
+        if limit == 0:
+            continue
+        point_rows = db.execute(
+            select(
+                SensorReading.value,
+                SensorReading.recorded_at,
+                SensorReading.id,
+            )
+            .where(
+                SensorReading.sensor_id == row.sensor_id,
+                SensorReading.recorded_at >= window_start,
+                SensorReading.recorded_at <= as_of,
+            )
+            .order_by(
+                SensorReading.recorded_at.desc(),
+                SensorReading.id.desc(),
+            )
+            .limit(limit)
+        ).all()
+        returned_point_count += len(point_rows)
+        points_by_sensor[row.sensor_id] = [
+            {"recorded_at": point.recorded_at, "value": point.value}
+            for point in reversed(point_rows)
+        ]
+
+    total_readings = sum(int(row.reading_count) for row in summary_rows)
+    points_truncated = total_readings > returned_point_count
 
     series = []
-    total_readings = 0
     for row in summary_rows:
         reading_count = int(row.reading_count)
-        total_readings += reading_count
         latest_value, latest_recorded_at = latest_by_sensor[row.sensor_id]
 
         series.append(
