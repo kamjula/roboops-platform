@@ -1,9 +1,4 @@
-"""Pydantic response schemas for the fleet dashboard endpoints.
-
-These schemas back read-only aggregate endpoints under /api/v1/dashboard.
-They intentionally avoid returning untyped dictionaries: every dashboard
-endpoint has an explicit, typed response model defined here.
-"""
+"""Pydantic response schemas for the fleet dashboard endpoints."""
 import uuid
 from datetime import datetime
 
@@ -13,15 +8,6 @@ from app.models.alert import AlertSeverity
 
 
 class DashboardSummary(BaseModel):
-    """Fleet-wide counters shown on the main dashboard landing view.
-
-    Robot counts use the real RobotStatus enum values (active, idle,
-    maintenance, offline, decommissioned) - there is no "warning" or
-    "critical" robot status in the schema. "warning"/"critical" only exist
-    as AlertSeverity values on the Alert model, and are reported here as
-    unresolved-alert counts, not robot states.
-    """
-
     total_robots: int
     active_robots: int
     idle_robots: int
@@ -37,12 +23,6 @@ class DashboardSummary(BaseModel):
 
 
 class RobotStatusCounts(BaseModel):
-    """Robot counts broken down by every real RobotStatus enum value.
-
-    All five enum values are always present, defaulting to zero, even when
-    no robots exist in that status (or at all).
-    """
-
     total_robots: int
     active: int
     idle: int
@@ -52,10 +32,7 @@ class RobotStatusCounts(BaseModel):
 
 
 class SiteSummaryItem(BaseModel):
-    """Robot count for a single site, including sites with zero robots."""
-
     model_config = ConfigDict(from_attributes=True)
-
     site_id: uuid.UUID
     site_code: str
     site_name: str
@@ -63,18 +40,6 @@ class SiteSummaryItem(BaseModel):
 
 
 class HealthSummaryResponse(BaseModel):
-    """Fleet health summary.
-
-    No table in the schema stores a normalized/battery health score for a
-    robot - sensor_readings.value is a raw float in whatever unit the
-    sensor uses (e.g. degrees, volts, percent, mm/s), and those units are
-    not comparable across sensor types. Averaging them together would
-    produce a meaningless number, so this endpoint deliberately does not
-    compute one. average_health_value is always null and
-    health_metric_available is always false until a real normalized health
-    field is added to the schema.
-    """
-
     average_health_value: float | None
     health_metric_available: bool
     robot_status_counts: RobotStatusCounts
@@ -110,22 +75,6 @@ class RobotHealthResponse(BaseModel):
 
 
 class MaintenanceSummaryResponse(BaseModel):
-    """Maintenance due/overdue/completed counts.
-
-    Definitions (see app/services/dashboard_service.py for the query logic):
-
-    - due: a MaintenanceSchedule with status in (scheduled, in_progress)
-      AND scheduled_for >= as_of.
-    - overdue: a MaintenanceSchedule with status in (scheduled, in_progress)
-      AND scheduled_for < as_of.
-    - completed: this endpoint reports the total number of MaintenanceRecord
-      rows (completed maintenance history), not MaintenanceSchedule rows
-      whose status is "completed". A schedule's status can be marked
-      completed independently of a record being created for it, so the
-      MaintenanceRecord count is used as the authoritative "completed
-      maintenance" figure.
-    """
-
     scheduled_count: int
     in_progress_count: int
     due_count: int
@@ -135,10 +84,7 @@ class MaintenanceSummaryResponse(BaseModel):
 
 
 class LatestAlertItem(BaseModel):
-    """A single alert enriched with robot identification for display."""
-
     model_config = ConfigDict(from_attributes=True)
-
     id: uuid.UUID
     robot_id: uuid.UUID
     robot_code: str
@@ -173,6 +119,30 @@ class TelemetryAnomalySummaryResponse(BaseModel):
     anomaly_events: list[AnomalyEvent]
     anomaly_event_limit: int
     anomaly_events_truncated: bool
+
+
+class StatisticalAnomalyResult(BaseModel):
+    reading_id: uuid.UUID
+    robot_id: uuid.UUID
+    sensor_id: uuid.UUID
+    sensor_type: str
+    value: float
+    recorded_at: datetime
+    baseline_sample_count: int
+    baseline_mean: float | None
+    baseline_stddev: float | None
+    z_score: float | None
+    status: str
+    reason: str
+
+
+class StatisticalAnomalyResponse(BaseModel):
+    as_of: datetime
+    window_start: datetime
+    baseline_hours: int
+    robot_id: uuid.UUID | None
+    status_counts: dict[str, int]
+    results: list[StatisticalAnomalyResult]
 
 
 class TelemetryTrendPoint(BaseModel):

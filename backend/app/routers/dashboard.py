@@ -20,11 +20,13 @@ from app.schemas.dashboard import (
     RobotHealthResponse,
     RobotStatusCounts,
     SiteSummaryItem,
+    StatisticalAnomalyResponse,
     TelemetryAnomalySummaryResponse,
     TelemetryTrendResponse,
 )
 from app.services import dashboard_service
 from app.services import robot_health_service
+from app.services import statistical_anomaly_service
 from app.services import telemetry_anomaly_service
 from app.services import telemetry_trend_service
 
@@ -37,28 +39,24 @@ router = APIRouter(
 
 @router.get("/summary", response_model=DashboardSummary)
 def read_dashboard_summary(db: Session = Depends(get_db)) -> DashboardSummary:
-    """Fleet-wide counters: robot statuses, sites, open alerts, maintenance due."""
     return dashboard_service.get_dashboard_summary(db)
 
 
 @router.get("/robot-status", response_model=RobotStatusCounts)
 def read_robot_status(db: Session = Depends(get_db)) -> RobotStatusCounts:
-    """Robot counts for every real RobotStatus enum value (zero-filled)."""
     return dashboard_service.get_robot_status_breakdown(db)
 
 
 @router.get("/latest-alerts", response_model=list[LatestAlertItem])
 def read_latest_alerts(
-    limit: int = Query(10, ge=1, le=100, description="Max number of alerts to return (1-100)."),
+    limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ) -> list[LatestAlertItem]:
-    """The most recent alerts fleet-wide, ordered by created_at DESC, id DESC."""
     return dashboard_service.get_latest_alerts(db, limit=limit)
 
 
 @router.get("/health-summary", response_model=HealthSummaryResponse)
 def read_health_summary(db: Session = Depends(get_db)) -> HealthSummaryResponse:
-    """Fleet health summary. No normalized health score exists in the schema."""
     return dashboard_service.get_health_summary(db)
 
 
@@ -67,44 +65,39 @@ def read_robot_health(db: Session = Depends(get_db)) -> RobotHealthResponse:
     return robot_health_service.get_robot_health(db)
 
 
-@router.get(
-    "/telemetry-anomalies",
-    response_model=TelemetryAnomalySummaryResponse,
-)
+@router.get("/telemetry-anomalies", response_model=TelemetryAnomalySummaryResponse)
 def read_telemetry_anomalies(
-    lookback_hours: int = Query(
+    lookback_hours: int = Query(24, ge=1, le=168),
+    db: Session = Depends(get_db),
+) -> TelemetryAnomalySummaryResponse:
+    return telemetry_anomaly_service.get_anomaly_summary(db, lookback_hours=lookback_hours)
+
+
+@router.get("/statistical-anomalies", response_model=StatisticalAnomalyResponse)
+def read_statistical_anomalies(
+    baseline_hours: int = Query(
         24,
         ge=1,
         le=168,
-        description="Historical telemetry lookback window in hours (1-168).",
+        description="Historical baseline window in hours (1-168).",
     ),
+    robot_id: uuid.UUID | None = Query(None, description="Optional robot UUID filter."),
     db: Session = Depends(get_db),
-) -> TelemetryAnomalySummaryResponse:
-    """Deterministic telemetry anomaly summary for supported sensors."""
-    return telemetry_anomaly_service.get_anomaly_summary(
+) -> StatisticalAnomalyResponse:
+    """Score latest persisted readings against their preceding real history."""
+    return statistical_anomaly_service.get_statistical_anomalies(
         db,
-        lookback_hours=lookback_hours,
+        baseline_hours=baseline_hours,
+        robot_id=robot_id,
     )
 
 
-@router.get(
-    "/telemetry-trends",
-    response_model=TelemetryTrendResponse,
-)
+@router.get("/telemetry-trends", response_model=TelemetryTrendResponse)
 def read_telemetry_trends(
-    lookback_hours: int = Query(
-        24,
-        ge=1,
-        le=168,
-        description="Historical telemetry lookback window in hours (1-168).",
-    ),
-    robot_id: uuid.UUID | None = Query(
-        None,
-        description="Optional robot UUID filter.",
-    ),
+    lookback_hours: int = Query(24, ge=1, le=168),
+    robot_id: uuid.UUID | None = Query(None),
     db: Session = Depends(get_db),
 ) -> TelemetryTrendResponse:
-    """Historical battery and temperature trends with truthful summaries."""
     return telemetry_trend_service.get_telemetry_trends(
         db,
         lookback_hours=lookback_hours,
@@ -114,11 +107,9 @@ def read_telemetry_trends(
 
 @router.get("/site-summary", response_model=list[SiteSummaryItem])
 def read_site_summary(db: Session = Depends(get_db)) -> list[SiteSummaryItem]:
-    """Per-site robot counts, including sites with zero robots."""
     return dashboard_service.get_site_summary(db)
 
 
 @router.get("/maintenance-summary", response_model=MaintenanceSummaryResponse)
 def read_maintenance_summary(db: Session = Depends(get_db)) -> MaintenanceSummaryResponse:
-    """Maintenance due/overdue/completed counts."""
     return dashboard_service.get_maintenance_summary(db)
