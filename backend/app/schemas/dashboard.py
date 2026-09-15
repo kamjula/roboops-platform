@@ -173,3 +173,36 @@ class TelemetryAnomalySummaryResponse(BaseModel):
     anomaly_events: list[AnomalyEvent]
     anomaly_event_limit: int
     anomaly_events_truncated: bool
+
+
+class TelemetryTrendPoint(BaseModel):
+    recorded_at: datetime
+    value: float
+
+
+class TelemetryTrendSeries(BaseModel):
+    robot_id: uuid.UUID
+    robot_code: str
+    robot_name: str
+    sensor_id: uuid.UUID
+    sensor_type: str
+    unit: str
+    reading_count: int
+    min_value: float
+    max_value: float
+    avg_value: float
+    latest_value: float
+    latest_recorded_at: datetime
+    points: list[TelemetryTrendPoint]
+
+
+class TelemetryTrendResponse(BaseModel):
+    as_of: datetime
+    window_start: datetime
+    lookback_hours: int
+    robot_id: uuid.UUID | None
+    total_readings: int
+    series_count: int
+    point_limit: int
+    points_truncated: bool
+    series: list[TelemetryTrendSeries]

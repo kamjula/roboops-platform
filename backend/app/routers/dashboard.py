@@ -1,9 +1,11 @@
 """Read-only fleet dashboard endpoints.
 
-All six endpoints return typed Pydantic response models (see
+All endpoints return typed Pydantic response models (see
 app.schemas.dashboard) rather than untyped dictionaries.
 """
 from __future__ import annotations
+
+import uuid
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -15,14 +17,16 @@ from app.schemas.dashboard import (
     HealthSummaryResponse,
     LatestAlertItem,
     MaintenanceSummaryResponse,
+    RobotHealthResponse,
     RobotStatusCounts,
     SiteSummaryItem,
-    RobotHealthResponse,
     TelemetryAnomalySummaryResponse,
+    TelemetryTrendResponse,
 )
 from app.services import dashboard_service
 from app.services import robot_health_service
 from app.services import telemetry_anomaly_service
+from app.services import telemetry_trend_service
 
 router = APIRouter(
     prefix="/api/v1/dashboard",
@@ -80,6 +84,31 @@ def read_telemetry_anomalies(
     return telemetry_anomaly_service.get_anomaly_summary(
         db,
         lookback_hours=lookback_hours,
+    )
+
+
+@router.get(
+    "/telemetry-trends",
+    response_model=TelemetryTrendResponse,
+)
+def read_telemetry_trends(
+    lookback_hours: int = Query(
+        24,
+        ge=1,
+        le=168,
+        description="Historical telemetry lookback window in hours (1-168).",
+    ),
+    robot_id: uuid.UUID | None = Query(
+        None,
+        description="Optional robot UUID filter.",
+    ),
+    db: Session = Depends(get_db),
+) -> TelemetryTrendResponse:
+    """Historical battery and temperature trends with truthful summaries."""
+    return telemetry_trend_service.get_telemetry_trends(
+        db,
+        lookback_hours=lookback_hours,
+        robot_id=robot_id,
     )
 
 
