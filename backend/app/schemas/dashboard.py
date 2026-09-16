@@ -176,3 +176,18 @@ class TelemetryTrendResponse(BaseModel):
     point_limit: int
     points_truncated: bool
     series: list[TelemetryTrendSeries]
+
+
+class TelemetryConditionResponse(BaseModel):
+    """Condition/anomaly score from real telemetry history; not failure probability."""
+
+    robot_id: uuid.UUID
+    status: str
+    score: float | None
+    reason: str
+    feature_z_scores: dict[str, float]
+    baseline_row_count: int
+    candidate_bucket_start: datetime | None
+    lookback_hours: int
+    method: str
+    predicts_failure: bool
