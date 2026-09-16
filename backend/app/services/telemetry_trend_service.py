@@ -63,9 +63,9 @@ def get_telemetry_trends(
 ) -> dict:
     """Return truthful per-sensor summaries plus bounded recent trend points.
 
-    Summary statistics cover the complete requested window. The global raw
-    point budget is allocated across sensor series so one high-volume sensor
-    cannot starve other valid series from the chart payload.
+    Summary statistics cover the complete requested window. PostgreSQL ranks
+    raw readings per sensor in one set-based query; application-side fair-share
+    limits then keep the response globally bounded without N+1 point queries.
     """
 
     as_of = _normalize_as_of(as_of)
@@ -130,35 +130,51 @@ def get_telemetry_trends(
     points_by_sensor: dict[uuid.UUID, list[dict]] = {}
     returned_point_count = 0
 
-    # Query each summarized series using its fair share of the global budget.
-    # This keeps the response bounded and prevents a noisy sensor from making
-    # another valid series appear to have no historical points.
-    for row in summary_rows:
-        limit = point_limits.get(row.sensor_id, 0)
-        if limit == 0:
-            continue
-        point_rows = db.execute(
+    if point_limits:
+        ranked_points = (
             select(
-                SensorReading.value,
-                SensorReading.recorded_at,
-                SensorReading.id,
+                SensorReading.sensor_id.label("sensor_id"),
+                SensorReading.value.label("value"),
+                SensorReading.recorded_at.label("recorded_at"),
+                func.row_number()
+                .over(
+                    partition_by=SensorReading.sensor_id,
+                    order_by=(SensorReading.recorded_at.desc(), SensorReading.id.desc()),
+                )
+                .label("row_number"),
             )
-            .where(
-                SensorReading.sensor_id == row.sensor_id,
-                SensorReading.recorded_at >= window_start,
-                SensorReading.recorded_at <= as_of,
-            )
-            .order_by(
-                SensorReading.recorded_at.desc(),
-                SensorReading.id.desc(),
-            )
-            .limit(limit)
-        ).all()
-        returned_point_count += len(point_rows)
-        points_by_sensor[row.sensor_id] = [
-            {"recorded_at": point.recorded_at, "value": point.value}
-            for point in reversed(point_rows)
-        ]
+            .join(Sensor, Sensor.id == SensorReading.sensor_id)
+            .where(*filters)
+            .subquery("ranked_trend_points")
+        )
+
+        # The largest fair allocation is a SQL-side upper bound. Sensors with
+        # smaller allocations are trimmed below, preserving the exact global
+        # budget while avoiding one query per series.
+        max_sensor_limit = max(point_limits.values(), default=0)
+        if max_sensor_limit > 0:
+            point_rows = db.execute(
+                select(
+                    ranked_points.c.sensor_id,
+                    ranked_points.c.value,
+                    ranked_points.c.recorded_at,
+                    ranked_points.c.row_number,
+                )
+                .where(ranked_points.c.row_number <= max_sensor_limit)
+                .order_by(
+                    ranked_points.c.sensor_id.asc(),
+                    ranked_points.c.row_number.desc(),
+                )
+            ).all()
+
+            for point in point_rows:
+                sensor_limit = point_limits.get(point.sensor_id, 0)
+                if point.row_number > sensor_limit:
+                    continue
+                points_by_sensor.setdefault(point.sensor_id, []).append(
+                    {"recorded_at": point.recorded_at, "value": point.value}
+                )
+                returned_point_count += 1
 
     total_readings = sum(int(row.reading_count) for row in summary_rows)
     points_truncated = total_readings > returned_point_count
