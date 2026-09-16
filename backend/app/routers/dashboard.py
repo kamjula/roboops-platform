@@ -22,12 +22,14 @@ from app.schemas.dashboard import (
     SiteSummaryItem,
     StatisticalAnomalyResponse,
     TelemetryAnomalySummaryResponse,
+    TelemetryConditionResponse,
     TelemetryTrendResponse,
 )
 from app.services import dashboard_service
 from app.services import robot_health_service
 from app.services import statistical_anomaly_service
 from app.services import telemetry_anomaly_service
+from app.services import telemetry_condition_service
 from app.services import telemetry_trend_service
 
 router = APIRouter(
@@ -102,6 +104,24 @@ def read_telemetry_trends(
         db,
         lookback_hours=lookback_hours,
         robot_id=robot_id,
+    )
+
+
+@router.get("/telemetry-condition", response_model=TelemetryConditionResponse)
+def read_telemetry_condition(
+    robot_id: uuid.UUID = Query(..., description="Robot UUID to score."),
+    lookback_hours: int = Query(168, ge=21, le=168),
+    db: Session = Depends(get_db),
+) -> TelemetryConditionResponse:
+    """Score a robot's newest complete hourly feature row against prior history.
+
+    This is an unsupervised condition/anomaly score, not a failure probability
+    or remaining-useful-life prediction.
+    """
+    return telemetry_condition_service.get_robot_condition(
+        db,
+        robot_id=robot_id,
+        lookback_hours=lookback_hours,
     )
 
 
