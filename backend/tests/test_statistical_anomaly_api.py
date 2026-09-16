@@ -250,6 +250,10 @@ def test_statistical_anomaly_service_uses_one_select_for_multiple_sensors(db_ses
     )
     db_session.commit()
 
+    # SQLAlchemy expires ORM instances on commit. Capture the scalar ID before
+    # attaching the listener so a lazy refresh of ``robot.id`` is not counted
+    # as a service query.
+    robot_id = robot.id
     select_count = 0
 
     def count_selects(_conn, _cursor, statement, _parameters, _context, _executemany):
@@ -260,7 +264,7 @@ def test_statistical_anomaly_service_uses_one_select_for_multiple_sensors(db_ses
     bind = db_session.get_bind()
     event.listen(bind, "before_cursor_execute", count_selects)
     try:
-        result = get_statistical_anomalies(db_session, as_of=as_of, robot_id=robot.id)
+        result = get_statistical_anomalies(db_session, as_of=as_of, robot_id=robot_id)
     finally:
         event.remove(bind, "before_cursor_execute", count_selects)
 
