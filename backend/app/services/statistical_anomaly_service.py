@@ -5,8 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, func, select
+from sqlalchemy.orm import Session, aliased
 
 from app.models import Sensor, SensorReading
 from app.services.statistical_anomaly_policy import score_observation
@@ -22,7 +22,13 @@ def get_statistical_anomalies(
     baseline_hours: int = DEFAULT_BASELINE_HOURS,
     robot_id: uuid.UUID | None = None,
 ) -> dict:
-    """Score the latest persisted reading per sensor against preceding history."""
+    """Score each sensor's latest persisted reading against preceding history.
+
+    PostgreSQL computes the historical baseline for all selected sensors in one
+    set-based query. The latest reading itself is excluded from the aggregate,
+    preserving the original no-leakage semantics without issuing one baseline
+    query per sensor.
+    """
     as_of = as_of or datetime.now(timezone.utc)
     if as_of.tzinfo is None:
         as_of = as_of.replace(tzinfo=timezone.utc)
@@ -51,42 +57,63 @@ def get_statistical_anomalies(
             SensorReading.id.desc(),
         )
         .distinct(SensorReading.sensor_id)
+        .subquery("latest_readings")
+    )
+
+    baseline_reading = aliased(SensorReading)
+    statement = (
+        select(
+            latest_stmt.c.reading_id,
+            latest_stmt.c.robot_id,
+            latest_stmt.c.sensor_id,
+            latest_stmt.c.sensor_type,
+            latest_stmt.c.value,
+            latest_stmt.c.recorded_at,
+            func.count(baseline_reading.id).label("sample_count"),
+            func.avg(baseline_reading.value).label("mean"),
+            func.stddev_samp(baseline_reading.value).label("stddev"),
+        )
+        .outerjoin(
+            baseline_reading,
+            and_(
+                baseline_reading.sensor_id == latest_stmt.c.sensor_id,
+                baseline_reading.recorded_at >= window_start,
+                baseline_reading.recorded_at < latest_stmt.c.recorded_at,
+            ),
+        )
+        .group_by(
+            latest_stmt.c.reading_id,
+            latest_stmt.c.robot_id,
+            latest_stmt.c.sensor_id,
+            latest_stmt.c.sensor_type,
+            latest_stmt.c.value,
+            latest_stmt.c.recorded_at,
+        )
+        .order_by(latest_stmt.c.sensor_id)
     )
     if robot_id is not None:
-        latest_stmt = latest_stmt.where(SensorReading.robot_id == robot_id)
+        statement = statement.where(latest_stmt.c.robot_id == robot_id)
 
     results = []
-    for latest in db.execute(latest_stmt):
-        baseline = db.execute(
-            select(
-                func.count(SensorReading.id).label("sample_count"),
-                func.avg(SensorReading.value).label("mean"),
-                func.stddev_samp(SensorReading.value).label("stddev"),
-            ).where(
-                SensorReading.sensor_id == latest.sensor_id,
-                SensorReading.recorded_at >= window_start,
-                SensorReading.recorded_at < latest.recorded_at,
-            )
-        ).one()
-
-        sample_count = int(baseline.sample_count or 0)
-        mean = float(baseline.mean) if baseline.mean is not None else None
-        stddev = float(baseline.stddev) if baseline.stddev is not None else None
+    for row in db.execute(statement):
+        sample_count = int(row.sample_count or 0)
+        mean = float(row.mean) if row.mean is not None else None
+        stddev = float(row.stddev) if row.stddev is not None else None
         score = score_observation(
-            value=float(latest.value),
+            value=float(row.value),
             mean=mean,
             stddev=stddev,
             sample_count=sample_count,
         )
-        sensor_type = latest.sensor_type.value if hasattr(latest.sensor_type, "value") else latest.sensor_type
+        sensor_type = row.sensor_type.value if hasattr(row.sensor_type, "value") else row.sensor_type
         results.append(
             {
-                "reading_id": latest.reading_id,
-                "robot_id": latest.robot_id,
-                "sensor_id": latest.sensor_id,
+                "reading_id": row.reading_id,
+                "robot_id": row.robot_id,
+                "sensor_id": row.sensor_id,
                 "sensor_type": sensor_type,
-                "value": float(latest.value),
-                "recorded_at": latest.recorded_at,
+                "value": float(row.value),
+                "recorded_at": row.recorded_at,
                 "baseline_sample_count": sample_count,
                 "baseline_mean": mean,
                 "baseline_stddev": stddev,
