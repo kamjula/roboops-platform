@@ -5,6 +5,7 @@ import Robots from "../pages/Robots.jsx";
 const api = vi.hoisted(() => ({
   getRobots: vi.fn(),
   getRobotHealth: vi.fn(),
+  getTelemetryCondition: vi.fn(),
   updateRobotStatus: vi.fn(),
 }));
 const auth = vi.hoisted(() => ({ user: { email: "viewer@example.com", role: "viewer" } }));
@@ -32,8 +33,21 @@ describe("Robots page", () => {
   beforeEach(() => {
     api.getRobots.mockReset();
     api.getRobotHealth.mockReset();
+    api.getTelemetryCondition.mockReset();
     api.updateRobotStatus.mockReset();
     api.getRobotHealth.mockResolvedValue({ robots: [] });
+    api.getTelemetryCondition.mockResolvedValue({
+      robot_id: "robot-1",
+      status: "unknown",
+      score: null,
+      reason: "minimum_baseline_rows_not_met",
+      feature_z_scores: {},
+      baseline_row_count: 0,
+      candidate_bucket_start: null,
+      lookback_hours: 168,
+      method: "rms_z_score",
+      predicts_failure: false,
+    });
     auth.user = { email: "viewer@example.com", role: "viewer" };
   });
 
