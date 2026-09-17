@@ -1,6 +1,9 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
+
+AS_OF = datetime(2026, 9, 16, 15, tzinfo=timezone.utc)
+WINDOW_START = AS_OF - timedelta(hours=168)
 
 
 def _response(robot_id: uuid.UUID):
@@ -18,6 +21,9 @@ def _response(robot_id: uuid.UUID):
         "baseline_row_count": 20,
         "candidate_bucket_start": datetime(2026, 9, 16, 14, tzinfo=timezone.utc),
         "lookback_hours": 168,
+        "as_of": AS_OF,
+        "window_start": WINDOW_START,
+        "condition_model_version": "rms-z-v1",
         "method": "rms_z_score",
         "predicts_failure": False,
     }
@@ -57,6 +63,9 @@ def test_telemetry_condition_returns_typed_truthful_contract(client):
     payload = response.json()
     assert payload["robot_id"] == str(robot_id)
     assert payload["method"] == "rms_z_score"
+    assert payload["condition_model_version"] == "rms-z-v1"
+    assert payload["as_of"] == AS_OF.isoformat().replace("+00:00", "Z")
+    assert payload["window_start"] == WINDOW_START.isoformat().replace("+00:00", "Z")
     assert payload["predicts_failure"] is False
     assert payload["baseline_row_count"] == 20
     service.assert_called_once()
