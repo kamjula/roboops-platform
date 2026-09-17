@@ -3,7 +3,7 @@ import Header from "../components/layout/Header.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getRobotHealth, getRobots, updateRobotStatus } from "../services/api.js";
+import { getRobotHealth, getRobots, getTelemetryCondition, updateRobotStatus } from "../services/api.js";
 
 const OPERATIONAL_STATUSES = ["active", "idle", "maintenance", "offline"];
 
@@ -19,6 +19,19 @@ function statusLabel(status) {
 
 function StatusBadge({ status }) {
 	return <span className={`robot-status-badge status-${status || "unknown"}`}>{statusLabel(status)}</span>;
+}
+
+function ConditionCell({ condition }) {
+	if (!condition) return <span>Unavailable</span>;
+	const score = typeof condition.score === "number" ? condition.score.toFixed(2) : null;
+	return (
+		<div>
+			<strong>{statusLabel(condition.status)}</strong>
+			<div>{score === null ? condition.reason : `Condition score ${score}`}</div>
+			<div>{condition.condition_model_version || condition.method}</div>
+			<small>Condition/anomaly signal only — not failure probability.</small>
+		</div>
+	);
 }
 
 function RobotRow({ robot, canChangeStatus, onStatusChange }) {
@@ -74,6 +87,7 @@ function RobotRow({ robot, canChangeStatus, onStatusChange }) {
 					</div>
 				) : "unknown"}
 			</td>
+			<td><ConditionCell condition={robot.condition} /></td>
 			<td>{formatDate(robot.installed_at)}</td>
 			<td>
 				{showControl ? (
@@ -110,7 +124,14 @@ export default function Robots() {
 		setError(null);
 		try {
 			const [robotData, healthData] = await Promise.all([getRobots(), getRobotHealth()]);
-			setRobots(robotData.map((robot) => ({ ...robot, health: healthData?.robots?.find((item) => item.robot_id === robot.id) })));
+			const conditionResults = await Promise.allSettled(
+				robotData.map((robot) => getTelemetryCondition(robot.id)),
+			);
+			setRobots(robotData.map((robot, index) => ({
+				...robot,
+				health: healthData?.robots?.find((item) => item.robot_id === robot.id),
+				condition: conditionResults[index]?.status === "fulfilled" ? conditionResults[index].value : null,
+			})));
 		} catch (requestError) {
 			setError(requestError);
 		} finally {
@@ -124,7 +145,7 @@ export default function Robots() {
 
 	const replaceRobot = (updatedRobot) => {
 		setRobots((currentRobots) => currentRobots.map((robot) => (
-			robot.id === updatedRobot.id ? { ...updatedRobot, health: robot.health } : robot
+			robot.id === updatedRobot.id ? { ...updatedRobot, health: robot.health, condition: robot.condition } : robot
 		)));
 	};
 
@@ -152,6 +173,7 @@ export default function Robots() {
 								<th scope="col">Model ID</th>
 								<th scope="col">Status</th>
 								<th scope="col">Telemetry Health</th>
+								<th scope="col">Condition Signal</th>
 								<th scope="col">Installed</th>
 								<th scope="col">Actions</th>
 							</tr>
