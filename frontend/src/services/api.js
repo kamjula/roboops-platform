@@ -117,3 +117,9 @@ export async function getHealthSummary() {
 export async function getRobotHealth() {
   return request("/api/v1/dashboard/robot-health");
 }
+
+export async function getTelemetryCondition(robotId, { lookbackHours = 168 } = {}) {
+  return request("/api/v1/dashboard/telemetry-condition", {
+    params: { robot_id: robotId, lookback_hours: lookbackHours },
+  });
+}
