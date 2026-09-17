@@ -1,8 +1,19 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from app.services.telemetry_condition_service import get_robot_condition
+
+AS_OF = datetime(2026, 9, 16, 15, tzinfo=timezone.utc)
+WINDOW_START = AS_OF - timedelta(hours=168)
+
+
+def _dataset(rows):
+    return {
+        "feature_rows": rows,
+        "as_of": AS_OF,
+        "window_start": WINDOW_START,
+    }
 
 
 def _feature_row(hour: int, offset: float = 0.0):
@@ -20,12 +31,15 @@ def test_returns_unknown_without_complete_feature_rows():
     robot_id = uuid.uuid4()
     with patch(
         "app.services.telemetry_condition_service.build_predictive_feature_dataset",
-        return_value={"feature_rows": []},
+        return_value=_dataset([]),
     ):
         result = get_robot_condition(Mock(), robot_id=robot_id)
     assert result["status"] == "unknown"
     assert result["reason"] == "no_complete_feature_rows"
     assert result["predicts_failure"] is False
+    assert result["as_of"] == AS_OF
+    assert result["window_start"] == WINDOW_START
+    assert result["condition_model_version"] == "rms-z-v1"
 
 
 def test_requires_preceding_baseline_and_excludes_candidate():
@@ -33,12 +47,13 @@ def test_requires_preceding_baseline_and_excludes_candidate():
     rows = [_feature_row(index, float(index)) for index in range(20)]
     with patch(
         "app.services.telemetry_condition_service.build_predictive_feature_dataset",
-        return_value={"feature_rows": rows},
+        return_value=_dataset(rows),
     ):
         result = get_robot_condition(Mock(), robot_id=robot_id)
     assert result["status"] == "unknown"
     assert result["reason"] == "minimum_baseline_rows_not_met"
     assert result["baseline_row_count"] == 19
+    assert result["condition_model_version"] == "rms-z-v1"
 
 
 def test_scores_newest_row_against_preceding_real_history():
@@ -48,7 +63,7 @@ def test_scores_newest_row_against_preceding_real_history():
     rows = baseline + [candidate]
     with patch(
         "app.services.telemetry_condition_service.build_predictive_feature_dataset",
-        return_value={"feature_rows": rows},
+        return_value=_dataset(rows),
     ):
         result = get_robot_condition(Mock(), robot_id=robot_id)
     assert result["baseline_row_count"] == 20
@@ -57,3 +72,6 @@ def test_scores_newest_row_against_preceding_real_history():
     assert result["score"] is not None
     assert result["predicts_failure"] is False
     assert result["method"] == "rms_z_score"
+    assert result["as_of"] == AS_OF
+    assert result["window_start"] == WINDOW_START
+    assert result["condition_model_version"] == "rms-z-v1"
