@@ -1,6 +1,7 @@
 """Pydantic response schemas for the fleet dashboard endpoints."""
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -178,11 +179,16 @@ class TelemetryTrendResponse(BaseModel):
     series: list[TelemetryTrendSeries]
 
 
+ConditionStatus = Literal["normal", "warning", "critical", "unknown"]
+ConditionMethod = Literal["rms_z_score"]
+ConditionModelVersion = Literal["rms-z-v1"]
+
+
 class TelemetryConditionResponse(BaseModel):
     """Condition/anomaly score from real telemetry history; not failure probability."""
 
     robot_id: uuid.UUID
-    status: str
+    status: ConditionStatus
     score: float | None
     reason: str
     feature_z_scores: dict[str, float]
@@ -191,9 +197,9 @@ class TelemetryConditionResponse(BaseModel):
     lookback_hours: int
     as_of: datetime
     window_start: datetime
-    condition_model_version: str
-    method: str
-    predicts_failure: bool
+    condition_model_version: ConditionModelVersion
+    method: ConditionMethod
+    predicts_failure: Literal[False]
 
 
 class FleetTelemetryConditionResponse(BaseModel):
@@ -202,7 +208,7 @@ class FleetTelemetryConditionResponse(BaseModel):
     as_of: datetime
     window_start: datetime
     lookback_hours: int
-    condition_model_version: str
-    method: str
-    predicts_failure: bool
+    condition_model_version: ConditionModelVersion
+    method: ConditionMethod
+    predicts_failure: Literal[False]
     robots: list[TelemetryConditionResponse]
