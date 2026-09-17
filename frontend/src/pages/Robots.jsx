@@ -3,7 +3,7 @@ import Header from "../components/layout/Header.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getRobotHealth, getRobots, getTelemetryCondition, updateRobotStatus } from "../services/api.js";
+import { getRobotHealth, getRobots, getTelemetryConditions, updateRobotStatus } from "../services/api.js";
 
 const OPERATIONAL_STATUSES = ["active", "idle", "maintenance", "offline"];
 
@@ -123,14 +123,15 @@ export default function Robots() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [robotData, healthData] = await Promise.all([getRobots(), getRobotHealth()]);
-			const conditionResults = await Promise.allSettled(
-				robotData.map((robot) => getTelemetryCondition(robot.id)),
-			);
-			setRobots(robotData.map((robot, index) => ({
+			const [robotData, healthData, conditionData] = await Promise.all([
+				getRobots(),
+				getRobotHealth(),
+				getTelemetryConditions().catch(() => ({ robots: [] })),
+			]);
+			setRobots(robotData.map((robot) => ({
 				...robot,
 				health: healthData?.robots?.find((item) => item.robot_id === robot.id),
-				condition: conditionResults[index]?.status === "fulfilled" ? conditionResults[index].value : null,
+				condition: conditionData?.robots?.find((item) => item.robot_id === robot.id) || null,
 			})));
 		} catch (requestError) {
 			setError(requestError);
