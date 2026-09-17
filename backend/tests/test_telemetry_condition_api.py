@@ -117,3 +117,35 @@ def test_fleet_telemetry_conditions_return_typed_truthful_contract(client):
     assert payload["robots"][0]["robot_id"] == str(robot_id)
     assert payload["robots"][0]["predicts_failure"] is False
     service.assert_called_once()
+
+
+def test_condition_contract_rejects_failure_prediction_claims(client):
+    """The typed API must reject any future response that claims failure prediction."""
+    robot_id = uuid.uuid4()
+    invalid = _response(robot_id)
+    invalid["predicts_failure"] = True
+    with patch(
+        "app.routers.dashboard.telemetry_condition_service.get_robot_condition",
+        return_value=invalid,
+    ):
+        response = client.get(
+            "/api/v1/dashboard/telemetry-condition",
+            params={"robot_id": str(robot_id), "lookback_hours": 168},
+        )
+    assert response.status_code == 500
+
+
+def test_condition_contract_rejects_unknown_model_version(client):
+    """Version pinning prevents silently changing the scoring semantics."""
+    robot_id = uuid.uuid4()
+    invalid = _response(robot_id)
+    invalid["condition_model_version"] = "unverified-v2"
+    with patch(
+        "app.routers.dashboard.telemetry_condition_service.get_robot_condition",
+        return_value=invalid,
+    ):
+        response = client.get(
+            "/api/v1/dashboard/telemetry-condition",
+            params={"robot_id": str(robot_id), "lookback_hours": 168},
+        )
+    assert response.status_code == 500
