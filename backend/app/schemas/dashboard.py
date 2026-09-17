@@ -189,5 +189,8 @@ class TelemetryConditionResponse(BaseModel):
     baseline_row_count: int
     candidate_bucket_start: datetime | None
     lookback_hours: int
+    as_of: datetime
+    window_start: datetime
+    condition_model_version: str
     method: str
     predicts_failure: bool
