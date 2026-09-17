@@ -29,11 +29,28 @@ def _response(robot_id: uuid.UUID):
     }
 
 
+def _fleet_response(robot_id: uuid.UUID):
+    return {
+        "as_of": AS_OF,
+        "window_start": WINDOW_START,
+        "lookback_hours": 168,
+        "condition_model_version": "rms-z-v1",
+        "method": "rms_z_score",
+        "predicts_failure": False,
+        "robots": [_response(robot_id)],
+    }
+
+
 def test_telemetry_condition_requires_auth(unauthenticated_client):
     response = unauthenticated_client.get(
         "/api/v1/dashboard/telemetry-condition",
         params={"robot_id": str(uuid.uuid4())},
     )
+    assert response.status_code == 401
+
+
+def test_fleet_telemetry_conditions_require_auth(unauthenticated_client):
+    response = unauthenticated_client.get("/api/v1/dashboard/telemetry-conditions")
     assert response.status_code == 401
 
 
@@ -46,6 +63,17 @@ def test_telemetry_condition_validates_query(client):
     assert client.get(
         "/api/v1/dashboard/telemetry-condition",
         params={"robot_id": str(robot_id), "lookback_hours": 169},
+    ).status_code == 422
+
+
+def test_fleet_telemetry_conditions_validate_query(client):
+    assert client.get(
+        "/api/v1/dashboard/telemetry-conditions",
+        params={"lookback_hours": 20},
+    ).status_code == 422
+    assert client.get(
+        "/api/v1/dashboard/telemetry-conditions",
+        params={"lookback_hours": 169},
     ).status_code == 422
 
 
@@ -68,4 +96,24 @@ def test_telemetry_condition_returns_typed_truthful_contract(client):
     assert payload["window_start"] == WINDOW_START.isoformat().replace("+00:00", "Z")
     assert payload["predicts_failure"] is False
     assert payload["baseline_row_count"] == 20
+    service.assert_called_once()
+
+
+def test_fleet_telemetry_conditions_return_typed_truthful_contract(client):
+    robot_id = uuid.uuid4()
+    with patch(
+        "app.routers.dashboard.telemetry_condition_service.get_fleet_conditions",
+        return_value=_fleet_response(robot_id),
+    ) as service:
+        response = client.get(
+            "/api/v1/dashboard/telemetry-conditions",
+            params={"lookback_hours": 168},
+        )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["method"] == "rms_z_score"
+    assert payload["condition_model_version"] == "rms-z-v1"
+    assert payload["predicts_failure"] is False
+    assert payload["robots"][0]["robot_id"] == str(robot_id)
+    assert payload["robots"][0]["predicts_failure"] is False
     service.assert_called_once()

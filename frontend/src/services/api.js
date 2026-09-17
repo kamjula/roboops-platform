@@ -123,3 +123,9 @@ export async function getTelemetryCondition(robotId, { lookbackHours = 168 } = {
     params: { robot_id: robotId, lookback_hours: lookbackHours },
   });
 }
+
+export async function getTelemetryConditions({ lookbackHours = 168 } = {}) {
+  return request("/api/v1/dashboard/telemetry-conditions", {
+    params: { lookback_hours: lookbackHours },
+  });
+}

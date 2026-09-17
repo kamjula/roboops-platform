@@ -9,6 +9,7 @@ import {
   getLatestAlerts,
   getHealthSummary,
   getRobots,
+  getTelemetryConditions,
   login,
   updateRobotStatus,
 } from "../services/api.js";
@@ -46,6 +47,14 @@ describe("dashboard api client", () => {
     expect(calledUrl).toContain("/api/v1/robots");
     expect(calledUrl).toContain("skip=10");
     expect(calledUrl).toContain("limit=25");
+  });
+
+  it("calls the fleet telemetry-condition endpoint once", async () => {
+    mockFetchOnce({ robots: [] });
+    await getTelemetryConditions({ lookbackHours: 48 });
+    const calledUrl = global.fetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("/api/v1/dashboard/telemetry-conditions");
+    expect(calledUrl).toContain("lookback_hours=48");
   });
 
   it("updates a robot operational status with JSON", async () => {
@@ -146,9 +155,6 @@ describe("dashboard api client", () => {
       });
     }));
 
-    // Attach the rejection assertion immediately so the promise always has a
-    // handler before the fake timer advances and triggers the abort, avoiding
-    // a spurious unhandled-rejection warning.
     const pending = getDashboardSummary();
     const assertion = expect(pending).rejects.toThrow(/timed out/i);
 
