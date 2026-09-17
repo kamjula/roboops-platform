@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from app.services.predictive_feature_service import build_predictive_feature_dataset
 from app.services.telemetry_condition_model import MIN_BASELINE_ROWS, fit_feature_baseline, score_condition
 
+CONDITION_MODEL_VERSION = "rms-z-v1"
+CONDITION_METHOD = "rms_z_score"
+
 
 def get_robot_condition(
     db: Session,
@@ -30,6 +33,13 @@ def get_robot_condition(
         robot_id=robot_id,
     )
     rows = dataset["feature_rows"]
+    audit = {
+        "as_of": dataset["as_of"],
+        "window_start": dataset["window_start"],
+        "condition_model_version": CONDITION_MODEL_VERSION,
+        "method": CONDITION_METHOD,
+        "predicts_failure": False,
+    }
     if not rows:
         return {
             "robot_id": robot_id,
@@ -40,8 +50,7 @@ def get_robot_condition(
             "baseline_row_count": 0,
             "candidate_bucket_start": None,
             "lookback_hours": lookback_hours,
-            "method": "rms_z_score",
-            "predicts_failure": False,
+            **audit,
         }
 
     candidate = rows[-1]
@@ -56,8 +65,7 @@ def get_robot_condition(
             "baseline_row_count": len(baseline_rows),
             "candidate_bucket_start": candidate["bucket_start"],
             "lookback_hours": lookback_hours,
-            "method": "rms_z_score",
-            "predicts_failure": False,
+            **audit,
         }
 
     baseline = fit_feature_baseline(baseline_rows)
@@ -71,6 +79,5 @@ def get_robot_condition(
         "baseline_row_count": baseline.row_count,
         "candidate_bucket_start": candidate["bucket_start"],
         "lookback_hours": lookback_hours,
-        "method": "rms_z_score",
-        "predicts_failure": False,
+        **audit,
     }
