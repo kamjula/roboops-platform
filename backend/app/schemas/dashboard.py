@@ -194,3 +194,15 @@ class TelemetryConditionResponse(BaseModel):
     condition_model_version: str
     method: str
     predicts_failure: bool
+
+
+class FleetTelemetryConditionResponse(BaseModel):
+    """Fleet condition results from one set-based feature extraction."""
+
+    as_of: datetime
+    window_start: datetime
+    lookback_hours: int
+    condition_model_version: str
+    method: str
+    predicts_failure: bool
+    robots: list[TelemetryConditionResponse]

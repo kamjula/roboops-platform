@@ -14,6 +14,7 @@ from app.core.security import get_current_user
 from app.database import get_db
 from app.schemas.dashboard import (
     DashboardSummary,
+    FleetTelemetryConditionResponse,
     HealthSummaryResponse,
     LatestAlertItem,
     MaintenanceSummaryResponse,
@@ -113,7 +114,7 @@ def read_telemetry_condition(
     lookback_hours: int = Query(168, ge=21, le=168),
     db: Session = Depends(get_db),
 ) -> TelemetryConditionResponse:
-    """Score a robot's newest complete hourly feature row against prior history.
+    """Score one robot's newest complete hourly feature row against prior history.
 
     This is an unsupervised condition/anomaly score, not a failure probability
     or remaining-useful-life prediction.
@@ -121,6 +122,22 @@ def read_telemetry_condition(
     return telemetry_condition_service.get_robot_condition(
         db,
         robot_id=robot_id,
+        lookback_hours=lookback_hours,
+    )
+
+
+@router.get("/telemetry-conditions", response_model=FleetTelemetryConditionResponse)
+def read_fleet_telemetry_conditions(
+    lookback_hours: int = Query(168, ge=21, le=168),
+    db: Session = Depends(get_db),
+) -> FleetTelemetryConditionResponse:
+    """Score the fleet with one set-based telemetry feature extraction.
+
+    Results remain condition/anomaly signals only. No failure probability,
+    RUL, model accuracy, or other predictive metric is fabricated.
+    """
+    return telemetry_condition_service.get_fleet_conditions(
+        db,
         lookback_hours=lookback_hours,
     )
 
