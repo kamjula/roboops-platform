@@ -5,6 +5,7 @@ import Robots from "../pages/Robots.jsx";
 const api = vi.hoisted(() => ({
   getRobots: vi.fn(),
   getRobotHealth: vi.fn(),
+  getTelemetryCondition: vi.fn(),
   updateRobotStatus: vi.fn(),
 }));
 const auth = vi.hoisted(() => ({ user: { email: "viewer@example.com", role: "viewer" } }));
@@ -32,8 +33,10 @@ describe("Robots page", () => {
   beforeEach(() => {
     api.getRobots.mockReset();
     api.getRobotHealth.mockReset();
+    api.getTelemetryCondition.mockReset();
     api.updateRobotStatus.mockReset();
     api.getRobotHealth.mockResolvedValue({ robots: [] });
+    api.getTelemetryCondition.mockRejectedValue(new Error("condition unavailable"));
     auth.user = { email: "viewer@example.com", role: "viewer" };
   });
 
@@ -48,7 +51,7 @@ describe("Robots page", () => {
     expect(screen.getByText("1 robot")).toBeInTheDocument();
   });
 
-  it("renders aggregate telemetry health without per-robot requests", async () => {
+  it("renders aggregate telemetry health without per-robot health requests", async () => {
     api.getRobots.mockResolvedValue([robot]);
     api.getRobotHealth.mockResolvedValue({
       robots: [{ robot_id: "robot-1", health_state: "warning", reason_codes: ["battery_low"] }],
@@ -57,6 +60,31 @@ describe("Robots page", () => {
     expect(await screen.findByText("warning")).toBeInTheDocument();
     expect(screen.getByText("battery_low")).toBeInTheDocument();
     expect(api.getRobotHealth).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the backend condition signal without presenting it as failure probability", async () => {
+    api.getRobots.mockResolvedValue([robot]);
+    api.getTelemetryCondition.mockResolvedValue({
+      robot_id: "robot-1",
+      status: "warning",
+      score: 2.25,
+      reason: "condition_score_at_least_2",
+      condition_model_version: "rms-z-v1",
+      method: "rms_z_score",
+      predicts_failure: false,
+    });
+    renderPage();
+    expect(await screen.findByText("Condition score 2.25")).toBeInTheDocument();
+    expect(screen.getByText("rms-z-v1")).toBeInTheDocument();
+    expect(screen.getByText("Condition/anomaly signal only — not failure probability.")).toBeInTheDocument();
+    expect(api.getTelemetryCondition).toHaveBeenCalledWith("robot-1");
+  });
+
+  it("keeps the fleet page usable when a condition request fails", async () => {
+    api.getRobots.mockResolvedValue([robot]);
+    renderPage();
+    expect(await screen.findByText("Warehouse Scout")).toBeInTheDocument();
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
   });
 
   it("renders loading state", () => {
