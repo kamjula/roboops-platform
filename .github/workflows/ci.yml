@@ -1,17 +1,54 @@
 name: CI
 on: [push, pull_request]
 jobs:
-  docker-image-builds:
+  full-stack-smoke:
     runs-on: ubuntu-latest
+    env:
+      ROBOOPS_BOOTSTRAP_EMAIL: smoke-admin@example.com
+      ROBOOPS_BOOTSTRAP_PASSWORD: "Smoke-only-password-2026!"
+      ROBOOPS_BOOTSTRAP_ROLE: admin
     steps:
       - uses: actions/checkout@v4
-      - name: Build backend production image
-        run: docker build --file docker/backend.Dockerfile --tag roboops-backend:ci backend
-      - name: Build frontend production image
-        run: >-
-          docker build --file docker/frontend.Dockerfile
-          --build-arg VITE_API_BASE_URL=http://localhost:8000
-          --tag roboops-frontend:ci frontend
+      - name: Configure CI-only local stack
+        run: cp .env.example .env
+      - name: Build and start production containers
+        run: docker compose up --build --detach postgres backend frontend
+      - name: Migrate, seed, and bootstrap smoke user
+        run: |
+          docker compose exec -T backend alembic upgrade head
+          docker compose exec -T backend python -m scripts.seed
+          docker compose exec -T \
+            -e ROBOOPS_BOOTSTRAP_EMAIL \
+            -e ROBOOPS_BOOTSTRAP_PASSWORD \
+            -e ROBOOPS_BOOTSTRAP_ROLE \
+            backend python -m scripts.bootstrap_user
+      - name: Verify frontend, login, authenticated API, and metrics
+        run: |
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 \
+            http://localhost:5173/healthz
+          curl --fail --silent --show-error http://localhost:5173/alerts | \
+            grep '<div id="root"></div>' >/dev/null
+          curl --fail --silent --show-error http://localhost:8000/health/ready | jq -e \
+            '.status == "ready" and .checks.database == "ok"'
+          token="$(curl --fail --silent --show-error \
+            --data-urlencode "username=${ROBOOPS_BOOTSTRAP_EMAIL}" \
+            --data-urlencode "password=${ROBOOPS_BOOTSTRAP_PASSWORD}" \
+            http://localhost:8000/api/v1/auth/login | jq -r '.access_token')"
+          test -n "$token" && test "$token" != "null"
+          curl --fail --silent --show-error -H "Authorization: Bearer $token" \
+            http://localhost:8000/api/v1/auth/me | jq -e \
+            '.email == "smoke-admin@example.com" and .role == "admin"'
+          curl --fail --silent --show-error -H "Authorization: Bearer $token" \
+            http://localhost:8000/api/v1/dashboard/summary | jq -e \
+            '.total_robots == 12 and .total_sites == 2'
+          curl --fail --silent --show-error http://localhost:8000/metrics | \
+            grep 'roboops_http_requests_total' >/dev/null
+      - name: Capture container logs
+        if: failure()
+        run: docker compose logs --no-color backend frontend postgres
+      - name: Stop local stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
 
   backend-tests:
     runs-on: ubuntu-latest
