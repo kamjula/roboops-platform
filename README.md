@@ -3,6 +3,7 @@
 ## Honest Project Status
 
 ![CI](https://github.com/kamjula/roboops-platform/actions/workflows/ci.yml/badge.svg)
+![Release](https://github.com/kamjula/roboops-platform/actions/workflows/release.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -27,6 +28,7 @@
 | Phase 16 | Database readiness probes and production container builds | Complete |
 | Phase 17 | Full-stack container smoke test with real auth and seeded data | Complete |
 | Phase 18 | Playwright browser E2E for authentication and operations UI | Complete |
+| Phase 19 | Versioned GHCR images, SBOM/provenance, and GitHub release | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 

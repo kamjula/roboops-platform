@@ -1,51 +1,47 @@
 # Changelog
 
-## Phase 13 - Alert lifecycle (2026-09-18)
+All notable changes are documented here. RoboOps follows semantic versioning
+starting with the first tagged release.
 
-- Added authenticated alert listing with open/resolved/all and severity filters.
-- Added idempotent operator/admin alert resolution with viewer write protection.
-- Replaced the Alerts placeholder with a role-aware operational table and tested loading, error, empty, filter, resolution, and mutation-failure states.
+## [0.1.0] - 2026-09-18
 
-## Phase 12 - Reproducible recruiter readiness (2026-09-18)
+### Platform
 
-- Reconciled the public roadmap and security documentation with the implemented Phase 6-11 system.
-- Added the frontend dependency lockfile and changed CI to `npm ci` for reproducible installs.
-- Removed duplicate backend CI database bootstrap logic.
-- Documented honest current capabilities and remaining production limitations.
+- Added FastAPI, React/Vite, PostgreSQL, Alembic, Docker Compose, and production
+  backend/Nginx frontend containers.
+- Added full CRUD for sites, robot models, and robots, plus authenticated fleet
+  dashboard and alert lifecycle workflows.
+- Added JWT authentication, role-based access control, and a safe idempotent
+  initial-user bootstrap command.
 
-All notable changes to this project are documented in this file. This project uses phase-based milestones instead of semantic versioning until the first tagged release exists.
+### Telemetry and analytics
 
-## Phase 4 - Dashboard APIs (2026-08-05)
-### Added
-- Six read-only fleet dashboard endpoints under /api/v1/dashboard/*: summary, robot-status, latest-alerts, health-summary, site-summary, maintenance-summary
-- Typed Pydantic response schemas for all dashboard endpoints
-- Dashboard service layer with aggregation queries
-- Test coverage for the dashboard API
+- Added idempotent HTTP telemetry ingestion and a stateful synthetic simulator.
+- Added Kafka/Redpanda producer and consumer flow with retry classification and
+  dead-letter topic handling.
+- Added telemetry health, deterministic anomaly rules, trend analytics,
+  statistical anomaly scoring, feature extraction, training-readiness gates,
+  and truthful unsupervised condition scoring.
+- Added condition-to-alert synchronization with database deduplication and
+  conservative unknown-signal handling.
 
-## Phase 3 - Core CRUD APIs (2026-08-02)
-### Added
-- Full CRUD (create, list, get, update, delete) endpoints for robots, robot_models, and sites under /api/v1/*
-- Typed request/response schemas and service-layer exception handling (404/409/422)
-### Fixed
-- Skipped DB-dependent API tests when TEST_DATABASE_URL is not set
+### Operations and evidence
 
-## Phase 2 - Database Foundation (2026-07-30)
-### Added
-- SQLAlchemy 2.x models and Alembic migrations for all nine domain tables
-- Deterministic, idempotent seed script (backend/scripts/seed.py)
-- Dedicated ORM and migration test databases with transactional test isolation
-- CI job (backend-db-tests) running against a live Postgres service
-### Documentation
-- Full column-level schema documentation in docs/database-schema.md
+- Added Prometheus HTTP metrics, request IDs, structured correlation payloads,
+  liveness/readiness checks, and low-cardinality route labels.
+- Added isolated PostgreSQL/migration tests, Kafka E2E, production-container
+  smoke tests, and Playwright Chromium authentication/operations workflows.
+- Added reproducible dependency locks, CI container builds, synthetic seed
+  data, security documentation, and explicit non-claims.
 
-## Phase 1 - Initial Architecture
-### Added
-- React + Vite frontend scaffold
-- FastAPI backend scaffold with a health endpoint
-- Docker Compose setup for backend, frontend, and PostgreSQL
-- Starter test suite
+### Release artifacts
 
----
-Note: entries above were reconstructed from the actual commit and CI history in this repository. No version tags exist yet in this repository; creating them (e.g. v0.4.0 for the current head) is a recommended next step.
----
-Note: entries above were reconstructed from the actual commit and CI history in this repository. No version tags exist yet in this repository; creating them (e.g. v0.4.0 for the current head) is a recommended next step.
+- Added automated version-tagged GHCR backend/frontend images with SBOM and
+  provenance metadata.
+- Added a versioned GitHub release created only after both images publish.
+
+## Historical milestones
+
+- Phase 13: authenticated alert lifecycle API and role-aware UI.
+- Phase 12: reproducible builds and recruiter-facing evidence cleanup.
+- Phases 1-11: platform foundation through truthful condition scoring.
