@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 12 - Reproducible recruiter readiness (2026-09-18)
+
+- Reconciled the public roadmap and security documentation with the implemented Phase 6-11 system.
+- Added the frontend dependency lockfile and changed CI to `npm ci` for reproducible installs.
+- Removed duplicate backend CI database bootstrap logic.
+- Documented honest current capabilities and remaining production limitations.
+
 All notable changes to this project are documented in this file. This project uses phase-based milestones instead of semantic versioning until the first tagged release exists.
 
 ## Phase 4 - Dashboard APIs (2026-08-05)
