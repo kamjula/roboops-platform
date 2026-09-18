@@ -26,6 +26,7 @@
 | Phase 15 | Prometheus HTTP metrics, request correlation, and structured access logs | Complete |
 | Phase 16 | Database readiness probes and production container builds | Complete |
 | Phase 17 | Full-stack container smoke test with real auth and seeded data | Complete |
+| Phase 18 | Playwright browser E2E for authentication and operations UI | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
@@ -109,6 +110,11 @@ fresh PostgreSQL database, runs migrations, loads the deterministic synthetic
 fleet, bootstraps a CI-only admin, and verifies login, identity, dashboard
 summary, readiness, frontend SPA routing, and Prometheus metrics. The bootstrap
 command never resets an existing account's password or role.
+
+Playwright then exercises the rendered application in Chromium: anonymous
+route protection, rejected credentials, admin login, the real 12-robot seeded
+dashboard, alert navigation, and logout/session cleanup. Failure-only traces,
+screenshots, and video are retained as short-lived CI artifacts for diagnosis.
 
 ### Phase 7B: HTTP telemetry simulator
 
