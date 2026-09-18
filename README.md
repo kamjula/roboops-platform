@@ -20,7 +20,8 @@
 | Phase 9 | Telemetry-driven robot health analytics | Complete |
 | Phase 10 | Anomaly detection, health trends, and query scalability | Complete |
 | Phase 11 | ML feature pipeline, training gate, and truthful condition scoring | Complete |
-| Phase 12 | Reproducible builds and recruiter-facing evidence | In progress |
+| Phase 12 | Reproducible builds and recruiter-facing evidence | Complete |
+| Phase 13 | Authenticated alert lifecycle API and role-aware UI | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
@@ -50,6 +51,8 @@ flowchart LR
 - /api/v1/telemetry/robots/{robot_id}/latest - authenticated latest readings per sensor
 - /api/v1/telemetry/sensors/{sensor_id}/readings - authenticated bounded history
 - /api/v1/dashboard/telemetry-* - authenticated anomaly, trend, health, and condition analytics
+- /api/v1/alerts - authenticated, filterable persisted alert list
+- /api/v1/alerts/{alert_id}/resolve - idempotent operator/admin resolution workflow
 - /api/v1/auth/login and /api/v1/auth/me - JWT identity flow
 - /health - service health check
 

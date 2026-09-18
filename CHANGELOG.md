@@ -1,5 +1,11 @@
 # Changelog
 
+## Phase 13 - Alert lifecycle (2026-09-18)
+
+- Added authenticated alert listing with open/resolved/all and severity filters.
+- Added idempotent operator/admin alert resolution with viewer write protection.
+- Replaced the Alerts placeholder with a role-aware operational table and tested loading, error, empty, filter, resolution, and mutation-failure states.
+
 ## Phase 12 - Reproducible recruiter readiness (2026-09-18)
 
 - Reconciled the public roadmap and security documentation with the implemented Phase 6-11 system.

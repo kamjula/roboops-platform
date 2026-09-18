@@ -26,3 +26,10 @@ class AlertRead(AlertBase):
 
     id: uuid.UUID
     created_at: datetime
+
+
+class AlertListItem(AlertRead):
+    """Alert response enriched with robot identity in the same query."""
+
+    robot_code: str
+    robot_name: str
