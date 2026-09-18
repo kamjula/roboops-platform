@@ -1,6 +1,7 @@
 """Pydantic schemas for Alert."""
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -33,3 +34,19 @@ class AlertListItem(AlertRead):
 
     robot_code: str
     robot_name: str
+
+
+class ConditionAlertSyncResponse(BaseModel):
+    """Auditable result of translating condition signals into operational alerts."""
+
+    as_of: datetime
+    lookback_hours: int
+    condition_model_version: Literal["rms-z-v1"]
+    method: Literal["rms_z_score"]
+    predicts_failure: Literal[False]
+    evaluated: int
+    created: int
+    updated: int
+    resolved: int
+    unchanged: int
+    unknown: int

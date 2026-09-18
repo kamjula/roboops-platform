@@ -70,6 +70,8 @@ def test_alembic_upgrade_and_downgrade_round_trip():
     tables = set(inspector.get_table_names())
     missing = EXPECTED_TABLES - tables
     assert not missing, f"Migration did not create expected tables: {missing}"
+    alert_indexes = {index["name"] for index in inspector.get_indexes("alerts")}
+    assert "uq_alerts_open_telemetry_condition_robot" in alert_indexes
 
     _run_alembic("downgrade base")
 

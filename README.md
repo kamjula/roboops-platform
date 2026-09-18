@@ -22,6 +22,7 @@
 | Phase 11 | ML feature pipeline, training gate, and truthful condition scoring | Complete |
 | Phase 12 | Reproducible builds and recruiter-facing evidence | Complete |
 | Phase 13 | Authenticated alert lifecycle API and role-aware UI | Complete |
+| Phase 14 | Condition-signal alert synchronization and database deduplication | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
@@ -52,11 +53,12 @@ flowchart LR
 - /api/v1/telemetry/sensors/{sensor_id}/readings - authenticated bounded history
 - /api/v1/dashboard/telemetry-* - authenticated anomaly, trend, health, and condition analytics
 - /api/v1/alerts - authenticated, filterable persisted alert list
+- /api/v1/alerts/sync-conditions - operator/admin condition-to-alert synchronization
 - /api/v1/alerts/{alert_id}/resolve - idempotent operator/admin resolution workflow
 - /api/v1/auth/login and /api/v1/auth/me - JWT identity flow
 - /health - service health check
 
-Note: technicians, sensors, sensor_readings, maintenance_schedules, maintenance_records, and alerts have database tables and models (Phase 2) but do not yet have dedicated CRUD routers.
+Note: technicians, sensors, sensor_readings, maintenance_schedules, and maintenance_records have database tables and models but do not yet have dedicated CRUD routers. Alerts expose an operational list, condition sync, and resolution workflow rather than unrestricted CRUD.
 
 Robotics Fleet Monitoring & Predictive Maintenance Platform.
 

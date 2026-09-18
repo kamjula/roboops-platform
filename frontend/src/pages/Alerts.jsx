@@ -3,7 +3,7 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import Header from "../components/layout/Header.jsx";
-import { getAlerts, resolveAlert } from "../services/api.js";
+import { getAlerts, resolveAlert, syncConditionAlerts } from "../services/api.js";
 
 function formatTimestamp(value) {
   if (!value) return "-";
@@ -19,6 +19,8 @@ export default function Alerts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resolvingId, setResolvingId] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
   const [mutationError, setMutationError] = useState(null);
   const canResolve = user?.role === "operator" || user?.role === "admin";
 
@@ -60,6 +62,24 @@ export default function Alerts() {
     }
   };
 
+  const handleSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setMutationError(null);
+    setSyncResult(null);
+    try {
+      const result = await syncConditionAlerts();
+      setSyncResult(result);
+      await loadAlerts();
+    } catch (requestError) {
+      setMutationError(requestError.status === 403
+        ? "You do not have permission to synchronize condition alerts."
+        : "Unable to synchronize condition alerts. Please try again.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <section className="page alerts-page">
       <Header title="Alerts" />
@@ -69,7 +89,14 @@ export default function Alerts() {
           <h2>Alert lifecycle</h2>
           <p>Review persisted operational alerts and resolve investigated events.</p>
         </div>
-        {!loading && !error ? <strong>{alerts.length} alerts</strong> : null}
+        <div>
+          {!loading && !error ? <strong>{alerts.length} alerts</strong> : null}
+          {canResolve ? (
+            <button type="button" className="resolve-alert-button" disabled={syncing} onClick={handleSync}>
+              {syncing ? "Syncing..." : "Sync condition alerts"}
+            </button>
+          ) : null}
+        </div>
       </div>
       <div className="alert-filters" aria-label="Alert filters">
         <label>Status
@@ -84,6 +111,11 @@ export default function Alerts() {
         </label>
       </div>
       {mutationError ? <div className="alert-mutation-error" role="alert">{mutationError}</div> : null}
+      {syncResult ? (
+        <div className="state-panel" role="status">
+          Evaluated {syncResult.evaluated}: {syncResult.created} created, {syncResult.updated} updated, {syncResult.resolved} resolved, {syncResult.unknown} unknown. Condition signals are not failure predictions.
+        </div>
+      ) : null}
       {loading ? <LoadingState label="Loading alerts..." /> : null}
       {!loading && error ? <ErrorState message="Unable to load alerts. Please try again." onRetry={loadAlerts} /> : null}
       {!loading && !error && alerts.length === 0 ? <div className="state-panel"><p>No alerts match these filters.</p></div> : null}

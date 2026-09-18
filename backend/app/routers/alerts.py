@@ -11,11 +11,21 @@ from app.core.security import get_current_user, require_roles
 from app.database import get_db
 from app.models import User, UserRole
 from app.models.alert import AlertSeverity
-from app.schemas.alert import AlertListItem, AlertRead
+from app.schemas.alert import AlertListItem, AlertRead, ConditionAlertSyncResponse
 from app.services import alert_service
 from app.services.exceptions import NotFoundError
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
+
+
+@router.post("/sync-conditions", response_model=ConditionAlertSyncResponse)
+def sync_condition_alerts(
+    lookback_hours: int = Query(168, ge=21, le=168),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
+) -> ConditionAlertSyncResponse:
+    """Translate truthful fleet condition signals into deduplicated alerts."""
+    return alert_service.sync_condition_alerts(db, lookback_hours=lookback_hours)
 
 
 @router.get("", response_model=list[AlertListItem])
