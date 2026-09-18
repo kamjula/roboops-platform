@@ -24,6 +24,7 @@
 | Phase 13 | Authenticated alert lifecycle API and role-aware UI | Complete |
 | Phase 14 | Condition-signal alert synchronization and database deduplication | Complete |
 | Phase 15 | Prometheus HTTP metrics, request correlation, and structured access logs | Complete |
+| Phase 16 | Database readiness probes and production container builds | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
@@ -58,6 +59,7 @@ flowchart LR
 - /api/v1/alerts/{alert_id}/resolve - idempotent operator/admin resolution workflow
 - /api/v1/auth/login and /api/v1/auth/me - JWT identity flow
 - /health - service health check
+- /health/ready - PostgreSQL-backed readiness check
 - /metrics - Prometheus process and low-cardinality HTTP telemetry
 
 Note: technicians, sensors, sensor_readings, maintenance_schedules, and maintenance_records have database tables and models but do not yet have dedicated CRUD routers. Alerts expose an operational list, condition sync, and resolution workflow rather than unrestricted CRUD.

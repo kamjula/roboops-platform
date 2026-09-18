@@ -1,6 +1,18 @@
 name: CI
 on: [push, pull_request]
 jobs:
+  docker-image-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend production image
+        run: docker build --file docker/backend.Dockerfile --tag roboops-backend:ci backend
+      - name: Build frontend production image
+        run: >-
+          docker build --file docker/frontend.Dockerfile
+          --build-arg VITE_API_BASE_URL=http://localhost:8000
+          --tag roboops-frontend:ci frontend
+
   backend-tests:
     runs-on: ubuntu-latest
     defaults: {run: {working-directory: backend}}
