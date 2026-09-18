@@ -26,6 +26,7 @@ def _seed_alerts(db_session):
         model_id=model.id,
         site_id=site.id,
         status=RobotStatus.ACTIVE,
+        installed_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
     )
     db_session.add(robot)
     db_session.commit()
