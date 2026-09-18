@@ -25,6 +25,7 @@
 | Phase 14 | Condition-signal alert synchronization and database deduplication | Complete |
 | Phase 15 | Prometheus HTTP metrics, request correlation, and structured access logs | Complete |
 | Phase 16 | Database readiness probes and production container builds | Complete |
+| Phase 17 | Full-stack container smoke test with real auth and seeded data | Complete |
 
 RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
@@ -102,6 +103,12 @@ cd frontend && npm ci && npm test && npm run build
 ```
 
 GitHub Actions independently runs backend tests, database/migration tests, frontend tests/build, and a real Kafka-to-PostgreSQL smoke test. A green badge reflects those checks; it is not a claim of production uptime.
+
+CI also starts the production backend and Nginx frontend containers against a
+fresh PostgreSQL database, runs migrations, loads the deterministic synthetic
+fleet, bootstraps a CI-only admin, and verifies login, identity, dashboard
+summary, readiness, frontend SPA routing, and Prometheus metrics. The bootstrap
+command never resets an existing account's password or role.
 
 ### Phase 7B: HTTP telemetry simulator
 
