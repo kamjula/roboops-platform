@@ -11,6 +11,7 @@ import {
   getRobots,
   getTelemetryConditions,
   login,
+  syncConditionAlerts,
   updateRobotStatus,
 } from "../services/api.js";
 
@@ -55,6 +56,15 @@ describe("dashboard api client", () => {
     const calledUrl = global.fetch.mock.calls[0][0].toString();
     expect(calledUrl).toContain("/api/v1/dashboard/telemetry-conditions");
     expect(calledUrl).toContain("lookback_hours=48");
+  });
+
+  it("posts the condition-alert sync with an explicit lookback", async () => {
+    mockFetchOnce({ evaluated: 0 });
+    await syncConditionAlerts({ lookbackHours: 72 });
+    const [calledUrl, options] = global.fetch.mock.calls[0];
+    expect(calledUrl.toString()).toContain("/api/v1/alerts/sync-conditions");
+    expect(calledUrl.toString()).toContain("lookback_hours=72");
+    expect(options.method).toBe("POST");
   });
 
   it("updates a robot operational status with JSON", async () => {

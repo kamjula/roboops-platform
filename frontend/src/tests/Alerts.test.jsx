@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Alerts from "../pages/Alerts.jsx";
 
-const api = vi.hoisted(() => ({ getAlerts: vi.fn(), resolveAlert: vi.fn() }));
+const api = vi.hoisted(() => ({ getAlerts: vi.fn(), resolveAlert: vi.fn(), syncConditionAlerts: vi.fn() }));
 const auth = vi.hoisted(() => ({ user: { email: "viewer@example.com", role: "viewer" } }));
 
 vi.mock("../services/api.js", () => api);
@@ -29,6 +29,7 @@ describe("Alerts page", () => {
   beforeEach(() => {
     api.getAlerts.mockReset();
     api.resolveAlert.mockReset();
+    api.syncConditionAlerts.mockReset();
     api.getAlerts.mockResolvedValue([alert]);
   });
 
@@ -64,6 +65,19 @@ describe("Alerts page", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Resolve" }));
     expect(await screen.findByText("Unable to resolve the alert. Please try again.")).toBeInTheDocument();
     expect(screen.getByText("RBT-001")).toBeInTheDocument();
+  });
+
+  it.each(["operator", "admin"])("allows %s to sync truthful condition alerts", async (role) => {
+    api.syncConditionAlerts.mockResolvedValue({
+      evaluated: 2, created: 1, updated: 0, resolved: 0, unchanged: 0, unknown: 1,
+    });
+    renderPage(role);
+    fireEvent.click(await screen.findByRole("button", { name: "Sync condition alerts" }));
+    await waitFor(() => expect(api.syncConditionAlerts).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Evaluated 2: 1 created, 0 updated, 0 resolved, 1 unknown",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("not failure predictions");
   });
 
   it("renders a retryable load error", async () => {
