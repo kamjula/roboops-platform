@@ -3,7 +3,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +18,14 @@ class AlertSeverity(str, enum.Enum):
 
 class Alert(Base):
     __tablename__ = "alerts"
+    __table_args__ = (
+        Index(
+            "uq_alerts_open_telemetry_condition_robot",
+            "robot_id",
+            unique=True,
+            postgresql_where=text("resolved_at IS NULL AND alert_type = 'telemetry_condition'"),
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     robot_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("robots.id"), nullable=False)

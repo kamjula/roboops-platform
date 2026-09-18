@@ -118,6 +118,13 @@ export function resolveAlert(alertId) {
   return request(`/api/v1/alerts/${alertId}/resolve`, { method: "PATCH" });
 }
 
+export function syncConditionAlerts({ lookbackHours = 168 } = {}) {
+  return request("/api/v1/alerts/sync-conditions", {
+    method: "POST",
+    params: { lookback_hours: lookbackHours },
+  });
+}
+
 export async function getHealthSummary() {
   return request("/api/v1/dashboard/health-summary");
 }
