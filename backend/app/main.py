@@ -8,6 +8,7 @@ from app.routers.robot_models import router as robot_models_router
 from app.routers.robots import router as robots_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.telemetry import router as telemetry_router
+from app.routers.alerts import router as alerts_router
 settings=get_settings()
 app=FastAPI(title="RoboOps API",description="Robotics Fleet Monitoring & Predictive Maintenance Platform",version="0.1.0")
 app.add_middleware(CORSMiddleware,allow_origins=settings.cors_origin_list,allow_credentials=True,allow_methods=["*"],allow_headers=["*"])
@@ -18,6 +19,7 @@ app.include_router(robot_models_router)
 app.include_router(robots_router)
 app.include_router(dashboard_router)
 app.include_router(telemetry_router)
+app.include_router(alerts_router)
 @app.get("/")
 def root():
     return {"message":"RoboOps API is running"}

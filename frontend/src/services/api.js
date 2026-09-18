@@ -110,6 +110,14 @@ export async function getLatestAlerts({ limit } = {}) {
   return request("/api/v1/dashboard/latest-alerts", { params: { limit } });
 }
 
+export function getAlerts({ status = "open", severity, limit = 100 } = {}) {
+  return request("/api/v1/alerts", { params: { status, severity, limit } });
+}
+
+export function resolveAlert(alertId) {
+  return request(`/api/v1/alerts/${alertId}/resolve`, { method: "PATCH" });
+}
+
 export async function getHealthSummary() {
   return request("/api/v1/dashboard/health-summary");
 }
