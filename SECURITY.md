@@ -25,3 +25,13 @@ You should expect an acknowledgment within 5 business days.
 ## Disclosure
 
 Once a reported issue is fixed, a summary will be added to CHANGELOG.md and the reporter credited unless anonymity is requested.
+
+## Automated Security Gates
+
+Pull requests and `main` are checked with Python and production JavaScript
+dependency audits, CodeQL analysis for Python and JavaScript/TypeScript, and
+Trivy scans of both production container images. Fixable high or critical
+container findings fail the workflow. Dependabot checks Python, npm, GitHub
+Actions, and Docker dependencies weekly. A green security workflow is evidence
+that these configured checks passed at that commit; it is not a guarantee that
+the software contains no vulnerabilities.
