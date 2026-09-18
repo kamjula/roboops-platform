@@ -14,25 +14,30 @@
 | Phase 3 | Core CRUD APIs for robots, robot_models, and sites | Complete |
 | Phase 4 | Read-only fleet dashboard APIs (6 endpoints) | Complete |
 | Phase 5 | React Enterprise Dashboard (frontend wired to the Phase 4 APIs) | Complete |
-| Phase 6 | Authentication and RBAC | Next |
-| Phase 7 | Kafka telemetry streaming | Planned |
-| Phase 8 | Advanced analytics and monitoring | Planned |
-| Phase 9 | Predictive maintenance ML | Planned |
-| Phase 10 | AI-assisted operations and incident analysis | Planned |
+| Phase 6 | JWT authentication, read protection, write RBAC, role-aware UI | Complete |
+| Phase 7 | Idempotent telemetry ingestion and stateful simulator | Complete |
+| Phase 8 | Kafka producer/consumer, Redpanda E2E path, retry and DLQ handling | Complete |
+| Phase 9 | Telemetry-driven robot health analytics | Complete |
+| Phase 10 | Anomaly detection, health trends, and query scalability | Complete |
+| Phase 11 | ML feature pipeline, training gate, and truthful condition scoring | Complete |
+| Phase 12 | Reproducible builds and recruiter-facing evidence | In progress |
 
-Known limitation: authentication and authorization are not yet implemented on any route. This is a deliberate, documented scope decision - see SECURITY.md and docs/adr/0001-defer-authentication.md.
+RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
 
 ### Architecture
 
 ```mermaid
 flowchart LR
-    A[React + Vite Frontend - Enterprise Dashboard, Phase 5] -->|REST| B[FastAPI Backend]
-    B --> C[(PostgreSQL)]
-    B --> D[Alembic Migrations]
+    A[React + Vite] -->|JWT REST| B[FastAPI]
+    S[Telemetry Simulator] -->|HTTP| B
+    S -->|Kafka events| K
+    B --> C[(PostgreSQL 16)]
+    K[Redpanda / Kafka] --> W[Telemetry Consumer]
+    W --> B
     subgraph CI [GitHub Actions CI]
-        E1[backend-tests: pytest unit and API tests]
-        E2[backend-db-tests: Postgres service container + pytest ORM and migration tests]
-        E3[frontend-tests: npm test]
+        E1[Backend + PostgreSQL]
+        E2[Frontend test + build]
+        E3[Kafka E2E]
     end
 ```
 
@@ -41,6 +46,11 @@ flowchart LR
 - /api/v1/robot-models - full CRUD
 - /api/v1/robots - full CRUD
 - /api/v1/dashboard/* - 6 read-only aggregate endpoints (summary, robot-status, latest-alerts, health-summary, site-summary, maintenance-summary)
+- /api/v1/telemetry/readings - idempotent operator/admin telemetry ingestion
+- /api/v1/telemetry/robots/{robot_id}/latest - authenticated latest readings per sensor
+- /api/v1/telemetry/sensors/{sensor_id}/readings - authenticated bounded history
+- /api/v1/dashboard/telemetry-* - authenticated anomaly, trend, health, and condition analytics
+- /api/v1/auth/login and /api/v1/auth/me - JWT identity flow
 - /health - service health check
 
 Note: technicians, sensors, sensor_readings, maintenance_schedules, maintenance_records, and alerts have database tables and models (Phase 2) but do not yet have dedicated CRUD routers.
@@ -66,9 +76,23 @@ Open http://localhost:5173 and http://localhost:8000/docs.
 
 ## Manual run
 
-Backend: `cd backend`, create/activate a virtual environment, `pip install -r requirements.txt`, then `uvicorn app.main:app --reload`.
+Backend: `cd backend`, create/activate a virtual environment, `pip install -r requirements.txt`, copy the repository `.env.example` to `.env`, then run `uvicorn app.main:app --reload`.
 
-Frontend: `cd frontend`, `npm install`, then `npm run dev`.
+Frontend: `cd frontend`, `npm ci`, then `npm run dev`.
+
+### Verification
+
+The full backend suite requires PostgreSQL because it verifies PostgreSQL-specific UUIDs, enums, migrations, transaction isolation, and set-based analytics. The supported local verification path is:
+
+```bash
+docker compose up -d postgres redpanda
+docker compose run --rm redpanda-topic-init
+docker compose run --rm backend alembic upgrade head
+docker compose run --rm backend pytest -v
+cd frontend && npm ci && npm test && npm run build
+```
+
+GitHub Actions independently runs backend tests, database/migration tests, frontend tests/build, and a real Kafka-to-PostgreSQL smoke test. A green badge reflects those checks; it is not a claim of production uptime.
 
 ### Phase 7B: HTTP telemetry simulator
 

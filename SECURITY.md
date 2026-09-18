@@ -6,9 +6,10 @@ This is an actively developed portfolio project. Only the latest commit on `main
 
 ## Known, Documented Limitations (not vulnerabilities to report)
 
-The following are intentional, in-progress scope decisions, not oversights:
-- Authentication is implemented as a Phase 6 foundation only; RBAC enforcement remains out of scope for this slice. All existing routes remain open until route-level authorization is added in a later phase.
-- JWTs are signed with a server-managed secret and should never be used in production without a non-default secret configured through environment variables.
+The following are intentional, documented scope decisions, not oversights:
+- Authentication and role-based access control are implemented. Read APIs require an authenticated viewer, operator, or admin; operational writes require operator or admin access; structural writes require admin access.
+- JWTs are signed with a required server-managed secret of at least 32 characters. Production deployments still need an external secret manager, key rotation, refresh-token/session revocation, and rate limiting.
+- Kafka/Redpanda is configured for local development without TLS, SASL, or ACLs. A production broker must enable transport encryption, authenticated clients, and topic-level authorization.
 - CORS origins are controlled via application settings (`app/core/config.py`) and should be restricted to trusted origins in any non-local environment.
 - Seed data (`backend/scripts/seed.py`) is 100% synthetic and fictional; it is not representative of real users or robots.
 
