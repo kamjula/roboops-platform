@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: roboops-api
+    runtime: docker
+    plan: free
+    region: ohio
+    autoDeployTrigger: checksPass
+    dockerfilePath: ./docker/backend.Dockerfile
+    dockerContext: ./backend
+    dockerCommand: python -m scripts.start_production
+    healthCheckPath: /health/ready
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_URL_UNPOOLED
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ROBOOPS_SEED_ON_STARTUP
+        value: "true"
+      - key: ROBOOPS_BOOTSTRAP_EMAIL
+        value: demo@roboops.example
+      - key: ROBOOPS_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: ROBOOPS_BOOTSTRAP_ROLE
+        value: viewer
