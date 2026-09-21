@@ -1,4 +1,4 @@
-from app.core.config import Settings
+from app.core.config import Settings, normalize_database_url
 
 
 JWT_SECRET = "test-jwt-secret-value-for-config-tests-123"
@@ -20,3 +20,9 @@ def test_settings_preserve_explicit_psycopg_driver_url(monkeypatch):
     settings = Settings(_env_file=None)
 
     assert settings.database_url == "postgresql+psycopg://user:pass@db.example/roboops"
+
+
+def test_normalize_database_url_supports_legacy_provider_scheme():
+    assert normalize_database_url("postgres://user:pass@db.example/roboops?sslmode=require") == (
+        "postgresql+psycopg://user:pass@db.example/roboops?sslmode=require"
+    )

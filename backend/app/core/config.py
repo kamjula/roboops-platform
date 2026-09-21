@@ -4,6 +4,15 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def normalize_database_url(value: str) -> str:
+    """Select psycopg v3 for provider-style PostgreSQL connection URLs."""
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+psycopg://", 1)
+    if value.startswith("postgres://"):
+        return value.replace("postgres://", "postgresql+psycopg://", 1)
+    return value
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
     environment: str = "development"
@@ -18,10 +27,7 @@ class Settings(BaseSettings):
     def use_psycopg_driver(cls, value):
         """Use the installed psycopg v3 driver for standard Postgres URLs."""
         if isinstance(value, str):
-            if value.startswith("postgresql://"):
-                return value.replace("postgresql://", "postgresql+psycopg://", 1)
-            if value.startswith("postgres://"):
-                return value.replace("postgres://", "postgresql+psycopg://", 1)
+            return normalize_database_url(value)
         return value
 
     @property

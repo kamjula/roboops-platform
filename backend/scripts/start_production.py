@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 
+from app.core.config import normalize_database_url
+
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
 
@@ -19,11 +21,15 @@ def _run_module(module: str, *, env: dict[str, str]) -> None:
 
 def initialize() -> None:
     runtime_env = os.environ.copy()
+    runtime_url = runtime_env.get("DATABASE_URL")
+    if runtime_url:
+        runtime_env["DATABASE_URL"] = normalize_database_url(runtime_url)
+
     migration_url = runtime_env.get("DATABASE_URL_UNPOOLED")
     if not migration_url:
         raise RuntimeError("DATABASE_URL_UNPOOLED is required for production migrations.")
 
-    migration_env = runtime_env | {"DATABASE_URL": migration_url}
+    migration_env = runtime_env | {"DATABASE_URL": normalize_database_url(migration_url)}
     subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
         check=True,

@@ -11,8 +11,8 @@ from scripts import start_production
 
 
 def test_initialize_uses_unpooled_migration_url_and_runtime_url(monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://pooled/app")
-    monkeypatch.setenv("DATABASE_URL_UNPOOLED", "postgresql+psycopg://direct/app")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://pooled/app?sslmode=require")
+    monkeypatch.setenv("DATABASE_URL_UNPOOLED", "postgres://direct/app?sslmode=require")
     monkeypatch.setenv("ROBOOPS_SEED_ON_STARTUP", "true")
     monkeypatch.setenv("ROBOOPS_BOOTSTRAP_EMAIL", "demo@example.com")
     monkeypatch.setenv("ROBOOPS_BOOTSTRAP_PASSWORD", "demo-password-123")
@@ -32,9 +32,9 @@ def test_initialize_uses_unpooled_migration_url_and_runtime_url(monkeypatch):
         [sys.executable, "-m", "scripts.seed"],
         [sys.executable, "-m", "scripts.bootstrap_user"],
     ]
-    assert calls[0][1]["DATABASE_URL"] == "postgresql+psycopg://direct/app"
-    assert calls[1][1]["DATABASE_URL"] == "postgresql+psycopg://pooled/app"
-    assert calls[2][1]["DATABASE_URL"] == "postgresql+psycopg://pooled/app"
+    assert calls[0][1]["DATABASE_URL"] == "postgresql+psycopg://direct/app?sslmode=require"
+    assert calls[1][1]["DATABASE_URL"] == "postgresql+psycopg://pooled/app?sslmode=require"
+    assert calls[2][1]["DATABASE_URL"] == "postgresql+psycopg://pooled/app?sslmode=require"
 
 
 def test_initialize_requires_direct_url_and_complete_bootstrap_pair(monkeypatch):
