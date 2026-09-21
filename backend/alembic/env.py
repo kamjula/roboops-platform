@@ -9,6 +9,7 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.core.config import normalize_database_url  # noqa: E402
 from app.database import Base  # noqa: E402
 from app.models import *  # noqa: E402,F401,F403 - registers all models with Base.metadata
 
@@ -24,7 +25,7 @@ def get_url() -> str:
     url = os.environ.get("DATABASE_URL")
     if not url:
         raise RuntimeError("DATABASE_URL environment variable must be set to run Alembic migrations.")
-    return url
+    return normalize_database_url(url)
 
 
 def run_migrations_offline() -> None:
