@@ -93,7 +93,7 @@ def db_session():
 @pytest.fixture()
 def client(db_session):
     """An admin TestClient whose app uses the same transactional db_session."""
-    from app.core.security import create_access_token, hash_password
+    from app.core.security import hash_password, issue_access_token
     from app.database import get_db
     from app.main import app
     from app.models import User, UserRole
@@ -113,7 +113,7 @@ def client(db_session):
             db_session.add(user)
             db_session.commit()
             db_session.refresh(user)
-            test_client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
+            test_client.headers.update({"Authorization": f"Bearer {issue_access_token(db_session, user.id)}"})
             yield test_client
     finally:
         app.dependency_overrides.pop(get_db, None)
@@ -138,7 +138,7 @@ def unauthenticated_client(db_session):
 
 @pytest.fixture()
 def role_client(client, db_session, request):
-    from app.core.security import create_access_token, hash_password
+    from app.core.security import hash_password, issue_access_token
     from app.models import User, UserRole
 
     role_clients = []
@@ -160,7 +160,7 @@ def role_client(client, db_session, request):
         db_session.refresh(user)
         role_test_client = TestClient(client.app)
         role_test_client.__enter__()
-        role_test_client.headers.update({"Authorization": f"Bearer {create_access_token(user.id)}"})
+        role_test_client.headers.update({"Authorization": f"Bearer {issue_access_token(db_session, user.id)}"})
         role_clients.append(role_test_client)
         return role_test_client
 

@@ -64,7 +64,7 @@ def test_unauthenticated_collection_reads_require_authentication(unauthenticated
 
 
 def test_invalid_and_expired_tokens_require_authentication(unauthenticated_client, db_session):
-    from app.core.security import create_access_token, hash_password
+    from app.core.security import hash_password, issue_access_token
     from app.models import User
 
     user = User(
@@ -75,7 +75,7 @@ def test_invalid_and_expired_tokens_require_authentication(unauthenticated_clien
     db_session.add(user)
     db_session.commit()
 
-    expired_token = create_access_token(user.id, expires_delta=timedelta(seconds=-1))
+    expired_token = issue_access_token(db_session, user.id, expires_delta=timedelta(seconds=-1))
     for token in ("malformed-token", expired_token):
         response = unauthenticated_client.get(
             "/api/v1/robots",

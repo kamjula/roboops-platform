@@ -24,9 +24,11 @@ MIGRATION_TEST_DATABASE_URL = os.environ.get("MIGRATION_TEST_DATABASE_URL")
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 EXPECTED_TABLES = {
+    "auth_sessions",
     "sites",
     "robot_models",
     "technicians",
+    "users",
     "robots",
     "sensors",
     "sensor_readings",

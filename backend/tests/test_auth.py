@@ -7,9 +7,9 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.core.config import Settings, get_settings
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import hash_password, issue_access_token, verify_password
 from app.main import app
-from app.models import User, UserRole
+from app.models import AuthSession, User, UserRole
 
 
 @pytest.fixture()
@@ -62,6 +62,8 @@ def test_login_success_returns_token(auth_client, db_session):
     assert "password_hash" not in body
     assert response.headers["x-ratelimit-limit"] == "10"
     assert response.headers["x-ratelimit-remaining"] == "9"
+    session = db_session.query(AuthSession).filter_by(user_id=user.id).one()
+    assert session.revoked_at is None
 
 
 def test_login_rejects_invalid_credentials(auth_client, db_session):
@@ -108,7 +110,7 @@ def test_login_rejects_inactive_user(auth_client, db_session):
 
 def test_me_returns_safe_fields(auth_client, db_session):
     user = _create_user(db_session, email="me@example.com", role=UserRole.ADMIN)
-    token = create_access_token(user.id)
+    token = issue_access_token(db_session, user.id)
 
     response = auth_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
 
@@ -124,7 +126,7 @@ def test_me_returns_safe_fields(auth_client, db_session):
 def test_token_validation_rejects_bad_requests(auth_client, db_session):
     user = _create_user(db_session, email="token@example.com")
 
-    valid = create_access_token(user.id)
+    valid = issue_access_token(db_session, user.id)
     response = auth_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {valid}"})
     assert response.status_code == 200
 
@@ -140,10 +142,39 @@ def test_token_validation_rejects_bad_requests(auth_client, db_session):
 
 def test_token_validation_rejects_inactive_and_missing_user(auth_client, db_session):
     user = _create_user(db_session, email="inactive-token@example.com", is_active=False)
-    inactive_token = create_access_token(user.id)
+    inactive_token = issue_access_token(db_session, user.id)
     response = auth_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {inactive_token}"})
     assert response.status_code == 401
 
-    missing_uuid = str(uuid.uuid4())
-    response = auth_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {create_access_token(missing_uuid)}"})
+    missing_user = _create_user(db_session, email="deleted-token@example.com")
+    missing_token = issue_access_token(db_session, missing_user.id)
+    db_session.delete(missing_user)
+    db_session.commit()
+    response = auth_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {missing_token}"})
     assert response.status_code == 401
+
+
+def test_logout_revokes_only_the_presented_session(auth_client, db_session):
+    user = _create_user(db_session, email="logout@example.com")
+    first_token = issue_access_token(db_session, user.id)
+    second_token = issue_access_token(db_session, user.id)
+
+    response = auth_client.post(
+        "/api/v1/auth/logout",
+        headers={"Authorization": f"Bearer {first_token}"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+    assert auth_client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {first_token}"},
+    ).status_code == 401
+    assert auth_client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {second_token}"},
+    ).status_code == 200
+
+
+def test_logout_requires_an_active_session(auth_client):
+    assert auth_client.post("/api/v1/auth/logout").status_code == 401
