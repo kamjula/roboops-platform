@@ -41,9 +41,16 @@ test("admin can sign in, inspect real seeded data, navigate, and log out", async
   await expect(page.getByText("Alert lifecycle")).toBeVisible();
   await expect(page.getByText("RBT-001").first()).toBeVisible();
 
+  const issuedToken = await page.evaluate(() => sessionStorage.getItem("roboops.access_token"));
+  expect(issuedToken).toBeTruthy();
   await page.getByRole("button", { name: "Log out" }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   const storedToken = await page.evaluate(() => sessionStorage.getItem("roboops.access_token"));
   expect(storedToken).toBeNull();
+
+  const replayResponse = await page.request.get("http://localhost:8000/api/v1/auth/me", {
+    headers: { Authorization: `Bearer ${issuedToken}` },
+  });
+  expect(replayResponse.status()).toBe(401);
 });
