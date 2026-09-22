@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.core.config import get_settings
 from app.models import Robot, RobotModel, RobotStatus, Sensor, SensorReading, SensorType, Site, UserRole
 
 pytestmark = pytest.mark.skipif(
@@ -104,6 +105,26 @@ def test_ingestion_persists_sensor_derived_robot_and_utc(operator_client, teleme
     assert stored.robot_id == sensor.robot_id
     assert stored.recorded_at == datetime(2025, 1, 1, 6, tzinfo=timezone.utc)
     assert stored.created_at is not None
+
+
+def test_ingestion_rate_limit_is_scoped_to_authenticated_user(operator_client, telemetry_fixture, monkeypatch):
+    _, sensor, *_ = telemetry_fixture
+    monkeypatch.setattr(get_settings(), "telemetry_write_rate_limit", 2)
+
+    responses = [
+        operator_client.post(
+            "/api/v1/telemetry/readings",
+            json=payload(sensor.id, source_event_id=f"rate-limit-{index}"),
+        )
+        for index in range(3)
+    ]
+
+    assert [response.status_code for response in responses[:2]] == [201, 201]
+    rejected = responses[-1]
+    assert rejected.status_code == 429
+    assert rejected.headers["x-ratelimit-limit"] == "2"
+    assert rejected.headers["x-ratelimit-remaining"] == "0"
+    assert int(rejected.headers["retry-after"]) >= 1
 
 
 def test_client_robot_id_is_rejected(operator_client, telemetry_fixture):
