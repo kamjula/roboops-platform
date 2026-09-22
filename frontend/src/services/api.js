@@ -140,6 +140,24 @@ export async function getRobotHealth() {
   return request("/api/v1/dashboard/robot-health");
 }
 
+export function getTelemetryAnomalies({ lookbackHours = 24 } = {}) {
+  return request("/api/v1/dashboard/telemetry-anomalies", {
+    params: { lookback_hours: lookbackHours },
+  });
+}
+
+export function getStatisticalAnomalies({ baselineHours = 24, robotId } = {}) {
+  return request("/api/v1/dashboard/statistical-anomalies", {
+    params: { baseline_hours: baselineHours, robot_id: robotId },
+  });
+}
+
+export function getTelemetryTrends({ lookbackHours = 24, robotId } = {}) {
+  return request("/api/v1/dashboard/telemetry-trends", {
+    params: { lookback_hours: lookbackHours, robot_id: robotId },
+  });
+}
+
 export async function getTelemetryCondition(robotId, { lookbackHours = 168 } = {}) {
   return request("/api/v1/dashboard/telemetry-condition", {
     params: { robot_id: robotId, lookback_hours: lookbackHours },
