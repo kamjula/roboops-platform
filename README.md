@@ -43,12 +43,13 @@ Render's free instance may need a short cold-start period after inactivity.
 | Phase 20 | CodeQL, dependency audits, container scanning, and Dependabot | Complete |
 | Phase 21 | Hosted Vercel frontend, Render API, Neon PostgreSQL, and deployment verification | Complete |
 | Phase 22 | Bounded login and telemetry-write rate limiting with retry headers | Complete |
+| Phase 23 | Database-backed revocable JWT sessions and server-side logout | Complete |
 
 RoboOps is an actively developed portfolio system with a public recruiter demo,
 not a claimed enterprise production service. It uses synthetic seed/simulator
 data and does not claim uptime, cost savings, failure-prediction accuracy,
 remaining useful life, or business impact that has not been measured. Current
-production gaps include managed secret rotation, JWT rotation/revocation,
+production gaps include managed secret rotation, refresh-token rotation,
 shared multi-replica rate limiting, and hosted Kafka with TLS/SASL/ACLs.
 Kafka/Redpanda remains a local and CI-tested integration rather than a
 hosted-demo dependency.
@@ -82,7 +83,7 @@ flowchart LR
 - /api/v1/alerts - authenticated, filterable persisted alert list
 - /api/v1/alerts/sync-conditions - operator/admin condition-to-alert synchronization
 - /api/v1/alerts/{alert_id}/resolve - idempotent operator/admin resolution workflow
-- /api/v1/auth/login and /api/v1/auth/me - JWT identity flow
+- /api/v1/auth/login, /api/v1/auth/me, and /api/v1/auth/logout - revocable JWT session flow
 - /health - service health check
 - /health/ready - PostgreSQL-backed readiness check
 - /metrics - Prometheus process and low-cardinality HTTP telemetry
@@ -91,6 +92,11 @@ Login attempts and authenticated telemetry writes use configurable fixed-window
 limits and return `429`, `Retry-After`, and `X-RateLimit-*` headers when
 exceeded. The current limiter is bounded and process-local; it is not presented
 as a distributed quota across multiple replicas.
+
+Issued access tokens are tied to database-backed sessions through a signed `jti`
+claim. Logout revokes the presented session server-side; see
+[`docs/authentication.md`](docs/authentication.md) for the exact lifecycle and
+explicit limitations.
 
 Note: technicians, sensors, sensor_readings, maintenance_schedules, and maintenance_records have database tables and models but do not yet have dedicated CRUD routers. Alerts expose an operational list, condition sync, and resolution workflow rather than unrestricted CRUD.
 
@@ -141,8 +147,9 @@ command never resets an existing account's password or role.
 
 Playwright then exercises the rendered application in Chromium: anonymous
 route protection, rejected credentials, admin login, the real 12-robot seeded
-dashboard, alert navigation, and logout/session cleanup. Failure-only traces,
-screenshots, and video are retained as short-lived CI artifacts for diagnosis.
+dashboard, alert navigation, server-side logout, and rejected reuse of the
+revoked token. Failure-only traces, screenshots, and video are retained as
+short-lived CI artifacts for diagnosis.
 
 ### Phase 7B: HTTP telemetry simulator
 
@@ -326,7 +333,7 @@ docker compose exec backend pytest -v
 curl http://localhost:8000/health
 ```
 
-Expected results: `docker compose ps` shows `postgres`, `backend`, and `frontend` as healthy/running; `\dt` lists all nine tables; the seed command prints a per-table row-count summary ending in a `total` line; `SELECT COUNT(*) FROM robots;` returns `12`; `pytest -v` passes, including the ORM tests and the destructive migration round-trip test; and `curl http://localhost:8000/health` returns `{"status":"ok","service":"roboops-backend"}`.
+Expected results: `docker compose ps` shows `postgres`, `backend`, and `frontend` as healthy/running; `\dt` includes the nine Phase 2 domain tables plus the later `users` and `auth_sessions` tables; the seed command prints a per-table row-count summary ending in a `total` line; `SELECT COUNT(*) FROM robots;` returns `12`; `pytest -v` passes, including the ORM tests and the destructive migration round-trip test; and `curl http://localhost:8000/health` returns `{"status":"ok","service":"roboops-backend"}`.
 
 ### Alembic round-trip validation
 
