@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(..., min_length=32, description="JWT signing secret; must be provided via environment")
     jwt_algorithm: str = "HS256"
     access_token_expiry_minutes: int = 30
+    login_rate_limit: int = Field(default=10, ge=1, le=10_000)
+    telemetry_write_rate_limit: int = Field(default=120, ge=1, le=100_000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
+    rate_limit_max_keys: int = Field(default=10_000, ge=100, le=1_000_000)
 
     @field_validator("database_url", mode="before")
     @classmethod

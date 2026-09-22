@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.core.security import create_access_token, hash_password, verify_password
 from app.main import app
 from app.models import User, UserRole
@@ -60,6 +60,8 @@ def test_login_success_returns_token(auth_client, db_session):
     assert "access_token" in body
     assert body["token_type"] == "bearer"
     assert "password_hash" not in body
+    assert response.headers["x-ratelimit-limit"] == "10"
+    assert response.headers["x-ratelimit-remaining"] == "9"
 
 
 def test_login_rejects_invalid_credentials(auth_client, db_session):
@@ -72,6 +74,27 @@ def test_login_rejects_invalid_credentials(auth_client, db_session):
     response = auth_client.post("/api/v1/auth/login", data={"username": "unknown@example.com", "password": "Passw0rd!"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Incorrect email or password."
+
+
+def test_login_rate_limit_returns_retry_headers(auth_client, db_session, monkeypatch):
+    _create_user(db_session, email="rate-limit@example.com")
+    monkeypatch.setattr(get_settings(), "login_rate_limit", 2)
+
+    responses = [
+        auth_client.post(
+            "/api/v1/auth/login",
+            data={"username": "rate-limit@example.com", "password": "WrongPass!"},
+        )
+        for _ in range(3)
+    ]
+
+    assert [response.status_code for response in responses[:2]] == [401] * 2
+    rejected = responses[-1]
+    assert rejected.status_code == 429
+    assert rejected.json()["detail"] == "Rate limit exceeded. Retry later."
+    assert rejected.headers["x-ratelimit-limit"] == "2"
+    assert rejected.headers["x-ratelimit-remaining"] == "0"
+    assert int(rejected.headers["retry-after"]) >= 1
 
 
 def test_login_rejects_inactive_user(auth_client, db_session):

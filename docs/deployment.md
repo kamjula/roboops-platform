@@ -23,8 +23,17 @@ Set these values in Render:
 - `DATABASE_URL_UNPOOLED`: the direct Neon URL with the same SQLAlchemy scheme. Only Alembic uses it.
 - `CORS_ORIGINS`: the exact HTTPS Vercel origin.
 - `ROBOOPS_BOOTSTRAP_PASSWORD`: a deployment-only password for the read-only demo account.
+- `LOGIN_RATE_LIMIT`: allowed login attempts per normalized account identifier in each window (default `10`).
+- `TELEMETRY_WRITE_RATE_LIMIT`: allowed telemetry writes per authenticated operator/admin in each window (default `120`).
+- `RATE_LIMIT_WINDOW_SECONDS`: fixed-window duration (default `60`).
 
 Render generates `JWT_SECRET_KEY`. The committed blueprint enables deterministic synthetic seed data and creates `demo@roboops.example` with the `viewer` role. Startup never changes an existing user's password or role.
+
+The API returns `429` with `Retry-After` and `X-RateLimit-*` headers when a
+protected route exceeds its configured allowance. The limiter is deliberately
+bounded and process-local, which is accurate for the single-instance hosted
+demo. A multi-replica deployment would require a shared limiter store before
+claiming a service-wide guarantee.
 
 The production entrypoint runs `alembic upgrade head` against the direct connection, optionally refreshes only the documented deterministic seed fleet, idempotently bootstraps the demo viewer, and then replaces itself with Uvicorn.
 

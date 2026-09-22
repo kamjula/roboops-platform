@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.observability import ObservabilityMiddleware, REQUEST_ID_HEADER
 from app.core.observability import router as observability_router
+from app.core.rate_limit import FixedWindowRateLimiter
 from app.routers.alerts import router as alerts_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
@@ -19,6 +20,7 @@ app = FastAPI(
     description="Robotics Fleet Monitoring & Predictive Maintenance Platform",
     version="0.1.0",
 )
+app.state.rate_limiter = FixedWindowRateLimiter(max_keys=settings.rate_limit_max_keys)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

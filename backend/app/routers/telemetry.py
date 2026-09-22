@@ -4,9 +4,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
+from app.core.rate_limit import enforce_rate_limit
 from app.core.security import get_current_user, require_roles
 from app.database import get_db
 from app.models import User, UserRole
@@ -42,10 +44,20 @@ def _normalize_filter(value: datetime | None, name: str) -> datetime | None:
 @router.post("/readings", response_model=TelemetryReadingResponse, status_code=status.HTTP_201_CREATED)
 def ingest_reading(
     payload: TelemetryReadingCreate,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
-    _: User = operator_write,
+    current_user: User = operator_write,
 ) -> TelemetryReadingResponse:
+    settings = get_settings()
+    enforce_rate_limit(
+        request,
+        response,
+        scope="telemetry-write",
+        subject=str(current_user.id),
+        limit=settings.telemetry_write_rate_limit,
+        window_seconds=settings.rate_limit_window_seconds,
+    )
     try:
         result = telemetry_service.ingest_reading(db, payload)
     except NotFoundError as exc:
