@@ -9,7 +9,10 @@ import {
   getLatestAlerts,
   getHealthSummary,
   getRobots,
+  getStatisticalAnomalies,
+  getTelemetryAnomalies,
   getTelemetryConditions,
+  getTelemetryTrends,
   login,
   logout,
   syncConditionAlerts,
@@ -57,6 +60,31 @@ describe("dashboard api client", () => {
     const calledUrl = global.fetch.mock.calls[0][0].toString();
     expect(calledUrl).toContain("/api/v1/dashboard/telemetry-conditions");
     expect(calledUrl).toContain("lookback_hours=48");
+  });
+
+  it("calls the deterministic anomaly endpoint with a bounded lookback", async () => {
+    mockFetchOnce({ anomaly_events: [] });
+    await getTelemetryAnomalies({ lookbackHours: 72 });
+    const calledUrl = global.fetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("/api/v1/dashboard/telemetry-anomalies");
+    expect(calledUrl).toContain("lookback_hours=72");
+  });
+
+  it("calls the statistical anomaly endpoint with baseline and robot filters", async () => {
+    mockFetchOnce({ results: [] });
+    await getStatisticalAnomalies({ baselineHours: 168, robotId: "robot-1" });
+    const calledUrl = global.fetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("/api/v1/dashboard/statistical-anomalies");
+    expect(calledUrl).toContain("baseline_hours=168");
+    expect(calledUrl).toContain("robot_id=robot-1");
+  });
+
+  it("calls the telemetry trend endpoint with the selected window", async () => {
+    mockFetchOnce({ series: [] });
+    await getTelemetryTrends({ lookbackHours: 24 });
+    const calledUrl = global.fetch.mock.calls[0][0].toString();
+    expect(calledUrl).toContain("/api/v1/dashboard/telemetry-trends");
+    expect(calledUrl).toContain("lookback_hours=24");
   });
 
   it("posts the condition-alert sync with an explicit lookback", async () => {
