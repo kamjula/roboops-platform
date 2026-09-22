@@ -48,6 +48,13 @@ jobs:
           curl --fail --silent --show-error -H "Authorization: Bearer $token" \
             http://localhost:8000/api/v1/dashboard/summary | jq -e \
             '.total_robots == 12 and .total_sites == 2'
+          curl --fail --silent --show-error --request POST \
+            -H "Authorization: Bearer $token" \
+            http://localhost:8000/api/v1/auth/logout --output /dev/null
+          revoked_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            -H "Authorization: Bearer $token" \
+            http://localhost:8000/api/v1/auth/me)"
+          test "$revoked_status" = "401"
           curl --fail --silent --show-error http://localhost:8000/metrics | \
             grep 'roboops_http_requests_total' >/dev/null
       - name: Run browser end-to-end workflow

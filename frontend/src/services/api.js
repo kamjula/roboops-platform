@@ -57,6 +57,9 @@ async function request(
     }
     throw error;
   }
+  if (response.status === 204) {
+    return null;
+  }
   return response.json();
 }
 
@@ -72,6 +75,10 @@ export async function login(email, password) {
 
 export function getCurrentUser() {
   return request("/api/v1/auth/me", { skipUnauthorized: true });
+}
+
+export function logout() {
+  return request("/api/v1/auth/logout", { method: "POST", skipUnauthorized: true });
 }
 
 export async function getHealth() {

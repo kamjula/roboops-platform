@@ -11,6 +11,7 @@ import {
   getRobots,
   getTelemetryConditions,
   login,
+  logout,
   syncConditionAlerts,
   updateRobotStatus,
 } from "../services/api.js";
@@ -93,6 +94,21 @@ describe("dashboard api client", () => {
     mockFetchOnce({ email: "viewer@example.com", role: "viewer" });
     await getCurrentUser();
     expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer stored-token");
+  });
+
+  it("posts logout with the bearer token and accepts an empty 204 response", async () => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, "stored-token");
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      statusText: "No Content",
+    });
+
+    await expect(logout()).resolves.toBeNull();
+    const [calledUrl, options] = global.fetch.mock.calls[0];
+    expect(calledUrl.toString()).toContain("/api/v1/auth/logout");
+    expect(options.method).toBe("POST");
+    expect(options.headers.Authorization).toBe("Bearer stored-token");
   });
 
   it("omits authorization when no token is stored", async () => {

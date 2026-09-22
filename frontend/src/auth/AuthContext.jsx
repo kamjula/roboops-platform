@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getCurrentUser, login as loginRequest } from "../services/api.js";
+import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "../services/api.js";
 
 const AuthContext = createContext(null);
 const ACCESS_TOKEN_KEY = "roboops.access_token";
@@ -84,9 +84,15 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    clearSession();
-    navigate("/login", { replace: true });
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } catch {
+      // The browser must still discard its token when the API is unreachable.
+    } finally {
+      clearSession();
+      navigate("/login", { replace: true });
+    }
   };
 
   const value = useMemo(

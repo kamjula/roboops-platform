@@ -1,6 +1,7 @@
 """Import all ORM models so they register with the shared Base metadata."""
 from app.database import Base
 from app.models.alert import Alert, AlertSeverity
+from app.models.auth_session import AuthSession
 from app.models.maintenance_record import MaintenanceRecord
 from app.models.maintenance_schedule import MaintenanceSchedule, MaintenanceStatus
 from app.models.robot import Robot, RobotStatus
@@ -15,6 +16,7 @@ __all__ = [
     "Base",
     "Alert",
     "AlertSeverity",
+    "AuthSession",
     "MaintenanceRecord",
     "MaintenanceSchedule",
     "MaintenanceStatus",

@@ -9,12 +9,14 @@ import { ACCESS_TOKEN_KEY } from "../services/api.js";
 const api = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   login: vi.fn(),
+  logout: vi.fn(),
 }));
 
 vi.mock("../services/api.js", () => ({
   ACCESS_TOKEN_KEY: "roboops.access_token",
   getCurrentUser: api.getCurrentUser,
   login: api.login,
+  logout: api.logout,
 }));
 
 function AuthProbe() {
@@ -45,6 +47,8 @@ describe("authentication flow", () => {
     sessionStorage.clear();
     api.getCurrentUser.mockReset();
     api.login.mockReset();
+    api.logout.mockReset();
+    api.logout.mockResolvedValue(null);
   });
 
   it("starts unauthenticated without a stored token", async () => {
@@ -82,13 +86,14 @@ describe("authentication flow", () => {
     expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBe("new-token");
   });
 
-  it("logout clears the session and navigates to login", async () => {
+  it("revokes the server session, clears the token, and navigates to login", async () => {
     sessionStorage.setItem(ACCESS_TOKEN_KEY, "stored-token");
     api.getCurrentUser.mockResolvedValue({ email: "admin@example.com", role: "admin" });
     renderAuth();
     await screen.findByRole("button", { name: "Log out" });
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
-    expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated");
+    await waitFor(() => expect(api.logout).toHaveBeenCalledOnce());
+    await waitFor(() => expect(screen.getByTestId("status")).toHaveTextContent("unauthenticated"));
     expect(screen.getByTestId("location")).toHaveTextContent("/login");
     expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
@@ -111,7 +116,18 @@ describe("authentication flow", () => {
     render(<MemoryRouter><AuthProvider><Header title="Dashboard" /></AuthProvider></MemoryRouter>);
     expect(await screen.findByText("admin@example.com (admin)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
-    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+    await waitFor(() => expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull());
+  });
+
+  it("clears the browser session even when server logout fails", async () => {
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, "stored-token");
+    api.getCurrentUser.mockResolvedValue({ email: "admin@example.com", role: "admin" });
+    api.logout.mockRejectedValue(new Error("network unavailable"));
+    renderAuth();
+    await screen.findByRole("button", { name: "Log out" });
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+    await waitFor(() => expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull());
+    expect(screen.getByTestId("location")).toHaveTextContent("/login");
   });
 });
 
