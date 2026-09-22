@@ -102,6 +102,7 @@ def client(db_session):
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
+    app.state.rate_limiter.clear()
     try:
         with TestClient(app) as test_client:
             user = User(
@@ -127,6 +128,7 @@ def unauthenticated_client(db_session):
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
+    app.state.rate_limiter.clear()
     try:
         with TestClient(app) as test_client:
             yield test_client

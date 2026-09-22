@@ -42,14 +42,16 @@ Render's free instance may need a short cold-start period after inactivity.
 | Phase 19 | Versioned GHCR images, SBOM/provenance, and GitHub release | Complete |
 | Phase 20 | CodeQL, dependency audits, container scanning, and Dependabot | Complete |
 | Phase 21 | Hosted Vercel frontend, Render API, Neon PostgreSQL, and deployment verification | Complete |
+| Phase 22 | Bounded login and telemetry-write rate limiting with retry headers | Complete |
 
 RoboOps is an actively developed portfolio system with a public recruiter demo,
 not a claimed enterprise production service. It uses synthetic seed/simulator
 data and does not claim uptime, cost savings, failure-prediction accuracy,
 remaining useful life, or business impact that has not been measured. Current
-production gaps include managed secret rotation, JWT rotation/revocation, API
-rate limiting, and hosted Kafka with TLS/SASL/ACLs. Kafka/Redpanda remains a
-local and CI-tested integration rather than a hosted-demo dependency.
+production gaps include managed secret rotation, JWT rotation/revocation,
+shared multi-replica rate limiting, and hosted Kafka with TLS/SASL/ACLs.
+Kafka/Redpanda remains a local and CI-tested integration rather than a
+hosted-demo dependency.
 
 ### Architecture
 
@@ -84,6 +86,11 @@ flowchart LR
 - /health - service health check
 - /health/ready - PostgreSQL-backed readiness check
 - /metrics - Prometheus process and low-cardinality HTTP telemetry
+
+Login attempts and authenticated telemetry writes use configurable fixed-window
+limits and return `429`, `Retry-After`, and `X-RateLimit-*` headers when
+exceeded. The current limiter is bounded and process-local; it is not presented
+as a distributed quota across multiple replicas.
 
 Note: technicians, sensors, sensor_readings, maintenance_schedules, and maintenance_records have database tables and models but do not yet have dedicated CRUD routers. Alerts expose an operational list, condition sync, and resolution workflow rather than unrestricted CRUD.
 

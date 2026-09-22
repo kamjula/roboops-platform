@@ -18,6 +18,12 @@ services:
         generateValue: true
       - key: CORS_ORIGINS
         sync: false
+      - key: LOGIN_RATE_LIMIT
+        value: "10"
+      - key: TELEMETRY_WRITE_RATE_LIMIT
+        value: "120"
+      - key: RATE_LIMIT_WINDOW_SECONDS
+        value: "60"
       - key: ROBOOPS_SEED_ON_STARTUP
         value: "true"
       - key: ROBOOPS_BOOTSTRAP_EMAIL
