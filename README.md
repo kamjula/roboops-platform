@@ -9,6 +9,16 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+### Live hosted demo
+
+- Frontend: https://roboops-platform.vercel.app
+- API documentation: https://roboops-api.onrender.com/docs
+- Database-backed readiness: https://roboops-api.onrender.com/health/ready
+
+The hosted demo uses the read-only `demo@roboops.example` viewer account. Its
+password is stored only in Render and is not committed to this repository.
+Render's free instance may need a short cold-start period after inactivity.
+
 | Phase | Scope | Status |
 |-------|-------|--------|
 | Phase 1 | React/Vite + FastAPI scaffold, Docker Compose, health check | Complete |
@@ -31,8 +41,15 @@
 | Phase 18 | Playwright browser E2E for authentication and operations UI | Complete |
 | Phase 19 | Versioned GHCR images, SBOM/provenance, and GitHub release | Complete |
 | Phase 20 | CodeQL, dependency audits, container scanning, and Dependabot | Complete |
+| Phase 21 | Hosted Vercel frontend, Render API, Neon PostgreSQL, and deployment verification | Complete |
 
-RoboOps is an actively developed portfolio system, not a claimed production deployment. It uses synthetic seed/simulator data and does not claim uptime, cost savings, failure-prediction accuracy, remaining useful life, or business impact that has not been measured. Current production gaps include external secret management, JWT rotation/revocation, API rate limiting, Kafka TLS/SASL/ACLs, and a hosted deployment.
+RoboOps is an actively developed portfolio system with a public recruiter demo,
+not a claimed enterprise production service. It uses synthetic seed/simulator
+data and does not claim uptime, cost savings, failure-prediction accuracy,
+remaining useful life, or business impact that has not been measured. Current
+production gaps include managed secret rotation, JWT rotation/revocation, API
+rate limiting, and hosted Kafka with TLS/SASL/ACLs. Kafka/Redpanda remains a
+local and CI-tested integration rather than a hosted-demo dependency.
 
 ### Architecture
 

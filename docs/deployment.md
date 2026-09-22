@@ -6,6 +6,13 @@ The recruiter demo uses separate services and keeps every credential outside the
 - Render builds the FastAPI production container from `render.yaml`.
 - Neon provides a dedicated PostgreSQL 16 project for RoboOps.
 
+Current verified endpoints:
+
+- Frontend: `https://roboops-platform.vercel.app`
+- Backend: `https://roboops-api.onrender.com`
+- API docs: `https://roboops-api.onrender.com/docs`
+- Readiness: `https://roboops-api.onrender.com/health/ready`
+
 Kafka/Redpanda remains an integration-tested local and CI capability. The hosted demo does not claim a managed Kafka deployment.
 
 ## Backend environment
@@ -40,3 +47,17 @@ Do not publish the demo URL until all of these pass:
 3. An anonymous dashboard request returns `401`.
 4. The viewer cannot call operator/admin write endpoints.
 5. The public frontend sends no mixed-content or CORS errors.
+
+## Verification record
+
+On 2026-09-22, the deployed `main` commit `4b0b829` was checked with the
+following evidence:
+
+- the Vercel frontend returned HTTP `200`;
+- `/health/ready` returned `{"status":"ready","checks":{"database":"ok"}}`;
+- a browser-equivalent login preflight from the exact Vercel origin returned
+  HTTP `200` with `Access-Control-Allow-Origin` set to that origin; and
+- the project owner completed the hosted demo viewer sign-in.
+
+This record does not claim uptime, load-test capacity, hosted Kafka, prediction
+accuracy, or business impact. The seeded fleet and telemetry are synthetic.
