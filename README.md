@@ -44,6 +44,7 @@ Render's free instance may need a short cold-start period after inactivity.
 | Phase 21 | Hosted Vercel frontend, Render API, Neon PostgreSQL, and deployment verification | Complete |
 | Phase 22 | Bounded login and telemetry-write rate limiting with retry headers | Complete |
 | Phase 23 | Database-backed revocable JWT sessions and server-side logout | Complete |
+| Phase 24 | Recruiter-facing telemetry analytics workspace | Complete |
 
 RoboOps is an actively developed portfolio system with a public recruiter demo,
 not a claimed enterprise production service. It uses synthetic seed/simulator
@@ -109,6 +110,16 @@ React + Vite frontend, FastAPI backend, PostgreSQL via Docker Compose, route pla
 ## Phase 5: React Enterprise Dashboard
 
 Phase 5 replaces the Phase 1 frontend route placeholders with a real dashboard wired to the live Phase 4 APIs. It adds an API client with request timeout handling (`AbortController`, 8s default), a `useDashboardData` hook, and dashboard panels for fleet summary, robot status, recent alerts, robot health, maintenance, and site summary. All page routes are lazy-loaded via `React.lazy` + `Suspense` to keep the initial bundle small. No fabricated metrics are shown: where the backend does not expose an aggregate health score, the UI reports it as unavailable rather than inventing a number. Covered by 10 frontend test files (32 tests).
+
+## Phase 24: Telemetry analytics workspace
+
+The Analytics route replaces its scaffold placeholder with a responsive view of
+the existing authenticated telemetry APIs. Operators can compare 24-, 72-, and
+168-hour windows across deterministic threshold events, statistical baseline
+signals, bounded sensor trend series, and fleet condition scores. Empty states
+remain explicit when persisted telemetry is unavailable. The interface labels
+condition scores as unsupervised anomaly signals and does not present them as
+failure probability, remaining useful life, or validated predictive accuracy.
 
 ## Quick start
 
