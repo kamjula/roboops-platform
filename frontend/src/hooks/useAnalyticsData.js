@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getStatisticalAnomalies,
   getTelemetryAnomalies,
@@ -17,8 +17,10 @@ export default function useAnalyticsData(lookbackHours) {
   const [data, setData] = useState(EMPTY_DATA);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const requestId = useRef(0);
 
   const fetchData = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
     setError(null);
     try {
@@ -28,16 +30,19 @@ export default function useAnalyticsData(lookbackHours) {
         getTelemetryTrends({ lookbackHours }),
         getTelemetryConditions({ lookbackHours }),
       ]);
-      setData({ deterministic, statistical, trends, conditions });
+      if (currentRequest === requestId.current) {
+        setData({ deterministic, statistical, trends, conditions });
+      }
     } catch (requestError) {
-      setError(requestError);
+      if (currentRequest === requestId.current) setError(requestError);
     } finally {
-      setLoading(false);
+      if (currentRequest === requestId.current) setLoading(false);
     }
   }, [lookbackHours]);
 
   useEffect(() => {
     fetchData();
+    return () => { requestId.current += 1; };
   }, [fetchData]);
 
   return { data, error, loading, refetch: fetchData };
