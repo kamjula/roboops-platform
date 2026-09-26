@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -16,10 +16,32 @@ from app.core.security import (
     verify_password,
 )
 from app.database import get_db
-from app.models import User
+from app.models import User, UserRole
 from app.schemas.user import UserMe
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+
+
+@router.post("/demo")
+def login_public_demo(request: Request, response: Response, db: Session = Depends(get_db)):
+    """Issue a short viewer session for an explicitly enabled synthetic-data demo."""
+    settings = get_settings()
+    if not settings.roboops_public_demo_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Public demo is disabled.")
+
+    # Bound session creation per client and across all clients on this instance.
+    enforce_rate_limit(
+        request, response, scope="public-demo-ip", subject=request.client.host if request.client else "unknown",
+        limit=20, window_seconds=60,
+    )
+    enforce_rate_limit(
+        request, response, scope="public-demo-global", subject="all", limit=120, window_seconds=60,
+    )
+    user = db.query(User).filter(User.email == settings.roboops_public_demo_email.lower()).one_or_none()
+    if user is None or not user.is_active or user.role != UserRole.VIEWER:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Read-only demo is unavailable.")
+    token = issue_access_token(db, user.id, expires_delta=timedelta(minutes=15))
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/login")
