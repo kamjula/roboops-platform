@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     rate_limit_max_keys: int = Field(default=10_000, ge=100, le=1_000_000)
     roboops_public_demo_enabled: bool = False
     roboops_public_demo_email: str = ""
+    roboops_synthetic_stream_enabled: bool = False
 
     @field_validator("database_url", mode="before")
     @classmethod
