@@ -32,3 +32,7 @@ services:
         sync: false
       - key: ROBOOPS_BOOTSTRAP_ROLE
         value: viewer
+      - key: ROBOOPS_PUBLIC_DEMO_ENABLED
+        value: "true"
+      - key: ROBOOPS_PUBLIC_DEMO_EMAIL
+        value: demo@roboops.example

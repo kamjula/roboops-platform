@@ -15,8 +15,11 @@
 - API documentation: https://roboops-api.onrender.com/docs
 - Database-backed readiness: https://roboops-api.onrender.com/health/ready
 
-The hosted demo uses the read-only `demo@roboops.example` viewer account. Its
-password is stored only in Render and is not committed to this repository.
+Select **Explore read-only demo** on the sign-in page. The public demo issues a
+15-minute viewer session for the synthetic `demo@roboops.example` account;
+write operations remain restricted by server-side RBAC. Its password stays
+in Render and is not needed by visitors. Public demo issuance is opt-in via
+`ROBOOPS_PUBLIC_DEMO_ENABLED` and `ROBOOPS_PUBLIC_DEMO_EMAIL`.
 Render's free instance may need a short cold-start period after inactivity.
 
 | Phase | Scope | Status |
