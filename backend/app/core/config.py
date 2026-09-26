@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     telemetry_write_rate_limit: int = Field(default=120, ge=1, le=100_000)
     rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
     rate_limit_max_keys: int = Field(default=10_000, ge=100, le=1_000_000)
+    roboops_public_demo_enabled: bool = False
+    roboops_public_demo_email: str = ""
 
     @field_validator("database_url", mode="before")
     @classmethod
