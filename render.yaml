@@ -36,3 +36,5 @@ services:
         value: "true"
       - key: ROBOOPS_PUBLIC_DEMO_EMAIL
         value: demo@roboops.example
+      - key: ROBOOPS_SYNTHETIC_STREAM_ENABLED
+        value: "true"

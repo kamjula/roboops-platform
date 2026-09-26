@@ -21,6 +21,13 @@ write operations remain restricted by server-side RBAC. Its password stays
 in Render and is not needed by visitors. Public demo issuance is opt-in via
 `ROBOOPS_PUBLIC_DEMO_ENABLED` and `ROBOOPS_PUBLIC_DEMO_EMAIL`.
 Render's free instance may need a short cold-start period after inactivity.
+The hosted demo also runs an opt-in, bounded synthetic telemetry generator.
+It persists deterministic five-minute readings for the 12 seeded fictional
+robots, backfills a sparse 24-hour chart at startup, and removes tagged demo
+readings older than seven days. A labeled high-temperature scenario for
+`RBT-003` exercises anomaly views. These values are generated examples, not
+real robot measurements or predictive-maintenance outcomes. Disable it with
+`ROBOOPS_SYNTHETIC_STREAM_ENABLED=false` outside the hosted demo.
 
 | Phase | Scope | Status |
 |-------|-------|--------|
