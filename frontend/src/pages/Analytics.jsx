@@ -41,8 +41,8 @@ export default function Analytics() {
             conditions={data.conditions}
           />
           <AnomalyPanel deterministic={data.deterministic} statistical={data.statistical} />
-          <TrendPanel trends={data.trends} />
-          <ConditionTable conditions={data.conditions} />
+          <TrendPanel trends={data.trends} lookbackHours={lookbackHours} />
+          <ConditionTable conditions={data.conditions} trends={data.trends} />
         </>
       ) : null}
     </section>
