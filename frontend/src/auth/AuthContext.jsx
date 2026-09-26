@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "../services/api.js";
+import { getCurrentUser, login as loginRequest, loginDemo as loginDemoRequest, logout as logoutRequest } from "../services/api.js";
 
 const AuthContext = createContext(null);
 const ACCESS_TOKEN_KEY = "roboops.access_token";
@@ -64,9 +64,9 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("roboops:unauthorized", handleUnauthorized);
   }, [location, navigate]);
 
-  const login = async (email, password) => {
+  const establishSession = async (requestToken) => {
     setError(null);
-    const response = await loginRequest(email, password);
+    const response = await requestToken();
     if (!response?.access_token) {
       throw new Error("Login response did not include an access token.");
     }
@@ -84,6 +84,9 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const login = (email, password) => establishSession(() => loginRequest(email, password));
+  const loginDemo = () => establishSession(loginDemoRequest);
+
   const logout = async () => {
     try {
       await logoutRequest();
@@ -96,7 +99,7 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ error, login, logout, status, token, user }),
+    () => ({ error, login, loginDemo, logout, status, token, user }),
     [error, status, token, user],
   );
 

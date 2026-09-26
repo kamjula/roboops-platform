@@ -9,6 +9,7 @@ import { ACCESS_TOKEN_KEY } from "../services/api.js";
 const api = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   login: vi.fn(),
+  loginDemo: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -16,6 +17,7 @@ vi.mock("../services/api.js", () => ({
   ACCESS_TOKEN_KEY: "roboops.access_token",
   getCurrentUser: api.getCurrentUser,
   login: api.login,
+  loginDemo: api.loginDemo,
   logout: api.logout,
 }));
 
@@ -47,6 +49,7 @@ describe("authentication flow", () => {
     sessionStorage.clear();
     api.getCurrentUser.mockReset();
     api.login.mockReset();
+    api.loginDemo.mockReset();
     api.logout.mockReset();
     api.logout.mockResolvedValue(null);
   });
@@ -84,6 +87,19 @@ describe("authentication flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "Authenticate" }));
     expect(await screen.findByTestId("user")).toHaveTextContent("operator@example.com (operator)");
     expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBe("new-token");
+  });
+
+  it("opens a viewer demo without asking for a password", async () => {
+    api.loginDemo.mockResolvedValue({ access_token: "demo-token" });
+    api.getCurrentUser.mockResolvedValue({ email: "demo@roboops.example", role: "viewer" });
+    function DemoProbe() {
+      const { loginDemo } = useAuth();
+      return <button onClick={loginDemo}>Explore read-only demo</button>;
+    }
+    render(<MemoryRouter><AuthProvider><DemoProbe /><AuthProbe /></AuthProvider></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Explore read-only demo" }));
+    expect(await screen.findByTestId("user")).toHaveTextContent("demo@roboops.example (viewer)");
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBe("demo-token");
   });
 
   it("revokes the server session, clears the token, and navigates to login", async () => {

@@ -73,6 +73,10 @@ export async function login(email, password) {
   });
 }
 
+export function loginDemo() {
+  return request("/api/v1/auth/demo", { method: "POST", skipUnauthorized: true, timeoutMs: 75000 });
+}
+
 export function getCurrentUser() {
   return request("/api/v1/auth/me", { skipUnauthorized: true });
 }

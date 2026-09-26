@@ -14,6 +14,7 @@ import {
   getTelemetryConditions,
   getTelemetryTrends,
   login,
+  loginDemo,
   logout,
   syncConditionAlerts,
   updateRobotStatus,
@@ -115,6 +116,15 @@ describe("dashboard api client", () => {
     expect(options.method).toBe("POST");
     expect(options.headers["Content-Type"]).toBe("application/x-www-form-urlencoded");
     expect(options.body.toString()).toBe("username=operator%40example.com&password=secret");
+  });
+
+  it("opens a public demo session with a bounded cold-start timeout", async () => {
+    mockFetchOnce({ access_token: "demo-token" });
+    await loginDemo();
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url.toString()).toContain("/api/v1/auth/demo");
+    expect(options.method).toBe("POST");
+    expect(options.headers.Authorization).toBeUndefined();
   });
 
   it("injects the current bearer token and supports the current-user endpoint", async () => {
