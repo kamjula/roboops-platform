@@ -2,8 +2,9 @@ function displayScore(score) {
   return score === null || score === undefined ? "Unavailable" : Number(score).toFixed(2);
 }
 
-export default function ConditionTable({ conditions }) {
+export default function ConditionTable({ conditions, trends }) {
   const robots = conditions?.robots ?? [];
+  const robotCodes = new Map((trends?.series ?? []).map(({ robot_id, robot_code }) => [robot_id, robot_code]));
   return (
     <section className="analytics-panel">
       <div className="analytics-panel-heading">
@@ -27,7 +28,7 @@ export default function ConditionTable({ conditions }) {
             <tbody>
               {robots.map((robot) => (
                 <tr key={robot.robot_id}>
-                  <td><code>{robot.robot_id.slice(0, 8)}</code></td>
+                  <td title={robot.robot_id}>{robotCodes.get(robot.robot_id) ?? `${robot.robot_id.slice(0, 8)} (code unavailable)`}</td>
                   <td><span className={`analytics-status status-${robot.status}`}>{robot.status}</span></td>
                   <td>{displayScore(robot.score)}</td>
                   <td>{robot.baseline_row_count}</td>
