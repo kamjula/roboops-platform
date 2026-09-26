@@ -10,9 +10,9 @@ vi.mock("recharts", () => ({
   Line: () => null,
   LineChart: ({ children }) => children,
   ResponsiveContainer: ({ children }) => children,
-  Tooltip: () => null,
-  XAxis: () => null,
-  YAxis: () => null,
+  Tooltip: ({ labelFormatter, formatter }) => <span data-testid="tooltip">{labelFormatter("2026-09-22T12:00:00Z")} {formatter(0.456)[0]}</span>,
+  XAxis: ({ tickFormatter }) => <span data-testid="x-tick">{tickFormatter("2026-09-22T12:00:00Z")}</span>,
+  YAxis: ({ tickFormatter }) => <span data-testid="y-tick">{tickFormatter(42.567)}</span>,
 }));
 
 vi.mock("../services/api.js", () => ({
@@ -42,6 +42,7 @@ const trends = {
   points_truncated: false,
   series: [{
     sensor_id: "sensor-1",
+    robot_id: "12345678-aaaa-bbbb-cccc-123456789012",
     robot_code: "RB-001",
     sensor_type: "temperature",
     unit: "C",
@@ -77,10 +78,15 @@ describe("Analytics page", () => {
 
     await waitFor(() => expect(screen.getByText("Readings evaluated")).toBeInTheDocument());
     expect(screen.getByText("120")).toBeInTheDocument();
-    expect(screen.getByText("RB-001")).toBeInTheDocument();
     expect(screen.getByText("rms-z-v1")).toBeInTheDocument();
     expect(screen.getByText(/not failure probabilities/i)).toBeInTheDocument();
-    expect(screen.getByText("12345678")).toBeInTheDocument();
+    expect(screen.getAllByText("RB-001")).toHaveLength(2);
+    expect(screen.getByText("87654321 (code unavailable)")).toHaveAttribute("title", "87654321-aaaa-bbbb-cccc-123456789012");
+    expect(screen.getByText("API-wide total: 120 readings")).toBeInTheDocument();
+    expect(screen.getByText("42.50 C")).toBeInTheDocument();
+    expect(screen.getByTestId("y-tick")).toHaveTextContent("42.57 C");
+    expect(screen.getByTestId("tooltip")).toHaveTextContent("0.456 C");
+    expect(screen.getByTestId("x-tick")).not.toHaveTextContent("9/22/2026");
   });
 
   it("refetches every analytics endpoint when the analysis window changes", async () => {
@@ -99,5 +105,29 @@ describe("Analytics page", () => {
     expect(api.getStatisticalAnomalies).toHaveBeenLastCalledWith({ baselineHours: 72 });
     expect(api.getTelemetryTrends).toHaveBeenLastCalledWith({ lookbackHours: 72 });
     expect(api.getTelemetryConditions).toHaveBeenLastCalledWith({ lookbackHours: 72 });
+    await waitFor(() => expect(screen.getByTestId("x-tick")).toHaveTextContent("9/22/2026"));
+  });
+
+  it("discloses the series limit without misrepresenting the API-wide reading count", async () => {
+    arrangeSuccessfulResponses();
+    api.getTelemetryTrends.mockResolvedValue({ ...trends, series: Array.from({ length: 5 }, (_, index) => ({ ...trends.series[0], sensor_id: `sensor-${index}` })) });
+    sessionStorage.setItem("roboops.access_token", "test-token");
+    render(<MemoryRouter><AuthProvider><Analytics /></AuthProvider></MemoryRouter>);
+    expect(await screen.findByText("Showing 4 of 5 series. The reading total covers all series.")).toBeInTheDocument();
+  });
+
+  it("ignores a previous window's response after a newer window completes", async () => {
+    arrangeSuccessfulResponses();
+    let finishOld;
+    api.getTelemetryTrends.mockImplementationOnce(() => new Promise((resolve) => { finishOld = resolve; }))
+      .mockResolvedValue({ ...trends, total_readings: 72 });
+    sessionStorage.setItem("roboops.access_token", "test-token");
+    render(<MemoryRouter><AuthProvider><Analytics /></AuthProvider></MemoryRouter>);
+    await waitFor(() => expect(finishOld).toBeTypeOf("function"));
+    fireEvent.change(screen.getByLabelText("Analysis window"), { target: { value: "72" } });
+    expect(await screen.findByText("API-wide total: 72 readings")).toBeInTheDocument();
+    finishOld({ ...trends, total_readings: 24 });
+    await waitFor(() => expect(screen.getByText("API-wide total: 72 readings")).toBeInTheDocument());
+    expect(screen.queryByText("API-wide total: 24 readings")).not.toBeInTheDocument();
   });
 });
