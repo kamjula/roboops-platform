@@ -8,15 +8,15 @@ export default function AnalyticsSummary({ deterministic, statistical, condition
     (totals, robot) => ({ ...totals, [robot.status]: (totals[robot.status] ?? 0) + 1 }),
     {},
   );
-  const deterministicEvents = Object.values(deterministic?.severity_counts ?? {})
-    .reduce((total, value) => total + value, 0);
+  const deterministicWarnings = count(deterministic?.severity_counts, "warning")
+    + count(deterministic?.severity_counts, "critical");
   const statisticalFlags = count(statistical?.status_counts, "warning")
     + count(statistical?.status_counts, "critical")
     + count(statistical?.status_counts, "anomaly");
 
   const cards = [
     ["Readings evaluated", deterministic?.total_readings ?? 0],
-    ["Rule-based events", deterministicEvents],
+    ["Rule-based warnings", deterministicWarnings],
     ["Statistical flags", statisticalFlags],
     ["Condition warnings", count(conditionCounts, "warning") + count(conditionCounts, "critical")],
   ];
