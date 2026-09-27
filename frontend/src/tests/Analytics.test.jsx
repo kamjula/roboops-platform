@@ -26,7 +26,7 @@ vi.mock("../services/api.js", () => ({
 const deterministic = {
   lookback_hours: 24,
   total_readings: 120,
-  severity_counts: { warning: 2, critical: 1 },
+  severity_counts: { normal: 117, warning: 2, critical: 1 },
   anomaly_events: [{}, {}, {}],
   anomaly_events_truncated: false,
 };
@@ -78,6 +78,8 @@ describe("Analytics page", () => {
 
     await waitFor(() => expect(screen.getByText("Readings evaluated")).toBeInTheDocument());
     expect(screen.getByText("120")).toBeInTheDocument();
+    expect(screen.getByText("Rule-based warnings")).toBeInTheDocument();
+    expect(screen.getByText("Rule-based warnings").parentElement).toHaveTextContent("3");
     expect(screen.getByText("rms-z-v1")).toBeInTheDocument();
     expect(screen.getByText(/not failure probabilities/i)).toBeInTheDocument();
     expect(screen.getAllByText("RB-001")).toHaveLength(2);
