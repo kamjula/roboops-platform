@@ -41,6 +41,22 @@ test("admin can sign in, inspect real seeded data, navigate, and log out", async
   await expect(page.getByText("Alert lifecycle")).toBeVisible();
   await expect(page.getByText("RBT-001").first()).toBeVisible();
 
+  await page.locator("nav").getByRole("link", { name: "Tasks", exact: true }).click();
+  await expect(page).toHaveURL(/\/tasks$/);
+  await expect(page.getByRole("heading", { name: "Items to review" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Review alerts/ })).toBeVisible();
+
+  await page.locator("nav").getByRole("link", { name: "Maintenance", exact: true }).click();
+  await expect(page).toHaveURL(/\/maintenance$/);
+  await expect(page.getByRole("heading", { name: "Schedules (12)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Service history (12)" })).toBeVisible();
+
+  await page.locator("nav").getByRole("link", { name: "AI Assistant", exact: true }).click();
+  await expect(page).toHaveURL(/\/ai-assistant$/);
+  await expect(page.getByText("no LLM is connected", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "What alerts are open?" }).click();
+  await expect(page.getByText(/open alerts returned/)).toBeVisible();
+
   const issuedToken = await page.evaluate(() => sessionStorage.getItem("roboops.access_token"));
   expect(issuedToken).toBeTruthy();
   await page.getByRole("button", { name: "Log out" }).click();
@@ -53,4 +69,28 @@ test("admin can sign in, inspect real seeded data, navigate, and log out", async
     headers: { Authorization: `Bearer ${issuedToken}` },
   });
   expect(replayResponse.status()).toBe(401);
+});
+
+test("mobile navigation keeps operational pages within the viewport", async ({ page }) => {
+  if (!email || !password) {
+    throw new Error("ROBOOPS_BOOTSTRAP_EMAIL and ROBOOPS_BOOTSTRAP_PASSWORD are required.");
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/$/);
+
+  await page.locator("nav").getByRole("link", { name: "Tasks", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Items to review" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.locator("nav").getByRole("link", { name: "Maintenance", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Schedules (12)" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  await page.locator("nav").getByRole("link", { name: "AI Assistant", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Ask about current evidence" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
