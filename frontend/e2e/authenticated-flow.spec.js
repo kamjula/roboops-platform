@@ -41,17 +41,17 @@ test("admin can sign in, inspect real seeded data, navigate, and log out", async
   await expect(page.getByText("Alert lifecycle")).toBeVisible();
   await expect(page.getByText("RBT-001").first()).toBeVisible();
 
-  await page.getByRole("link", { name: "Tasks" }).click();
+  await page.locator("nav").getByRole("link", { name: "Tasks", exact: true }).click();
   await expect(page).toHaveURL(/\/tasks$/);
   await expect(page.getByRole("heading", { name: "Items to review" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Review alerts/ })).toBeVisible();
 
-  await page.getByRole("link", { name: "Maintenance" }).click();
+  await page.locator("nav").getByRole("link", { name: "Maintenance", exact: true }).click();
   await expect(page).toHaveURL(/\/maintenance$/);
   await expect(page.getByRole("heading", { name: "Schedules (12)" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Service history (12)" })).toBeVisible();
 
-  await page.getByRole("link", { name: "AI Assistant" }).click();
+  await page.locator("nav").getByRole("link", { name: "AI Assistant", exact: true }).click();
   await expect(page).toHaveURL(/\/ai-assistant$/);
   await expect(page.getByText("no LLM is connected", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "What alerts are open?" }).click();
@@ -82,15 +82,15 @@ test("mobile navigation keeps operational pages within the viewport", async ({ p
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/$/);
 
-  await page.getByRole("link", { name: "Tasks" }).click();
+  await page.locator("nav").getByRole("link", { name: "Tasks", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Items to review" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
-  await page.getByRole("link", { name: "Maintenance" }).click();
+  await page.locator("nav").getByRole("link", { name: "Maintenance", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Schedules (12)" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 
-  await page.getByRole("link", { name: "AI Assistant" }).click();
+  await page.locator("nav").getByRole("link", { name: "AI Assistant", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Ask about current evidence" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 });
