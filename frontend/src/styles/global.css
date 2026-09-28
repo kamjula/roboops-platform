@@ -26,3 +26,5 @@
 .demo-entry{margin-top:24px;padding-top:20px;border-top:1px solid #304158}.demo-entry p{color:#b8c4d4;font-size:13px;line-height:1.5}.demo-entry button{width:100%;padding:11px 14px;border:1px solid #4f8ef7;border-radius:8px;background:#1a2a40;color:#fff;font:inherit;cursor:pointer}.demo-entry button:disabled{cursor:wait;opacity:.65}
 /* Persistent disclosure for the hosted synthetic fleet */
 .synthetic-demo-label{margin:0 8px 18px;padding:10px;border:1px solid #4a3a15;border-radius:8px;background:#271f10;color:#f0c771;font-size:11px;line-height:1.4}@media(max-width:820px){.synthetic-demo-label{font-size:0;padding:7px}.synthetic-demo-label::before{content:"Demo";font-size:10px}}
+
+.maintenance-page{display:flex;flex-direction:column;gap:24px}.maintenance-page section h3{margin:0 0 12px;font-size:20px}.maintenance-page section>p{color:#8fa0b7;font-size:13px}
