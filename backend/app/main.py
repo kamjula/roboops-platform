@@ -15,6 +15,7 @@ from app.routers.alerts import router as alerts_router
 from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.health import router as health_router
+from app.routers.maintenance import router as maintenance_router
 from app.routers.robot_models import router as robot_models_router
 from app.routers.robots import router as robots_router
 from app.routers.sites import router as sites_router
@@ -76,6 +77,7 @@ app.include_router(robots_router)
 app.include_router(dashboard_router)
 app.include_router(telemetry_router)
 app.include_router(alerts_router)
+app.include_router(maintenance_router)
 
 
 @app.get("/")

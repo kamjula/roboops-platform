@@ -117,6 +117,10 @@ export async function getMaintenanceSummary() {
   return request("/api/v1/dashboard/maintenance-summary");
 }
 
+export function getMaintenanceWorkspace({ limit = 100 } = {}) {
+  return request("/api/v1/maintenance", { params: { limit } });
+}
+
 export async function getLatestAlerts({ limit } = {}) {
   return request("/api/v1/dashboard/latest-alerts", { params: { limit } });
 }
