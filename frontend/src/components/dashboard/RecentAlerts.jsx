@@ -42,7 +42,7 @@ export default function RecentAlerts({ alerts } = {}) {
                   {alert.message ? <span className="alert-text">{alert.message}</span> : null}
                 </div>
               </div>
-              <span className="alert-timestamp">{formatTimestamp(alert.created_at)}</span>
+              <span className="alert-timestamp">Triggered {formatTimestamp(alert.triggered_at)}<br />Recorded {formatTimestamp(alert.created_at)}</span>
             </li>
           ))}
         </ul>

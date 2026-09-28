@@ -11,6 +11,7 @@ const alerts = [
     alert_type: "battery_low",
     message: "Battery critically low",
     created_at: "2026-08-08T10:00:00Z",
+    triggered_at: "2026-01-01T10:00:00Z",
   },
   {
     id: 2,
@@ -39,6 +40,13 @@ describe("RecentAlerts", () => {
     const items = screen.getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("RBT-001");
     expect(items[1]).toHaveTextContent("RBT-002");
+  });
+
+  it("distinguishes historical trigger time from recent recording time", () => {
+    render(<RecentAlerts alerts={alerts} />);
+    const first = screen.getAllByRole("listitem")[0];
+    expect(first).toHaveTextContent("Triggered 1/1/2026");
+    expect(first).toHaveTextContent("Recorded 8/8/2026");
   });
 
   it("handles an empty alerts array cleanly", () => {

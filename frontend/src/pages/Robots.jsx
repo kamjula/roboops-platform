@@ -3,7 +3,7 @@ import Header from "../components/layout/Header.jsx";
 import ErrorState from "../components/common/ErrorState.jsx";
 import LoadingState from "../components/common/LoadingState.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
-import { getRobotHealth, getRobots, getTelemetryConditions, updateRobotStatus } from "../services/api.js";
+import { getRobotHealth, getRobots, getRobotModels, getSites, getTelemetryConditions, updateRobotStatus } from "../services/api.js";
 
 const OPERATIONAL_STATUSES = ["active", "idle", "maintenance", "offline"];
 
@@ -76,8 +76,8 @@ function RobotRow({ robot, canChangeStatus, onStatusChange }) {
 				<span className="robot-code">{robot.robot_code || "-"}</span>
 			</th>
 			<td>{robot.serial_number || "-"}</td>
-			<td>{robot.site_id || "-"}</td>
-			<td>{robot.model_id || "-"}</td>
+			<td title={robot.site_id || undefined}>{robot.site_label || "Code unavailable"}</td>
+			<td title={robot.model_id || undefined}>{robot.model_label || "Code unavailable"}</td>
 			<td><StatusBadge status={robot.status} /></td>
 			<td>
 				{robot.health ? (
@@ -123,13 +123,19 @@ export default function Robots() {
 		setLoading(true);
 		setError(null);
 		try {
-			const [robotData, healthData, conditionData] = await Promise.all([
+			const [robotData, healthData, conditionData, siteData, modelData] = await Promise.all([
 				getRobots(),
 				getRobotHealth(),
 				getTelemetryConditions().catch(() => ({ robots: [] })),
+				getSites().catch(() => []),
+				getRobotModels().catch(() => []),
 			]);
+			const sites = new Map(siteData.map((site) => [site.id, site.site_code || site.name]));
+			const models = new Map(modelData.map((model) => [model.id, model.model_code || model.name]));
 			setRobots(robotData.map((robot) => ({
 				...robot,
+				site_label: sites.get(robot.site_id),
+				model_label: models.get(robot.model_id),
 				health: healthData?.robots?.find((item) => item.robot_id === robot.id),
 				condition: conditionData?.robots?.find((item) => item.robot_id === robot.id) || null,
 			})));
@@ -146,7 +152,7 @@ export default function Robots() {
 
 	const replaceRobot = (updatedRobot) => {
 		setRobots((currentRobots) => currentRobots.map((robot) => (
-			robot.id === updatedRobot.id ? { ...updatedRobot, health: robot.health, condition: robot.condition } : robot
+			robot.id === updatedRobot.id ? { ...updatedRobot, health: robot.health, condition: robot.condition, site_label: robot.site_label, model_label: robot.model_label } : robot
 		)));
 	};
 
@@ -170,8 +176,8 @@ export default function Robots() {
 							<tr>
 								<th scope="col">Robot</th>
 								<th scope="col">Serial Number</th>
-								<th scope="col">Site ID</th>
-								<th scope="col">Model ID</th>
+								<th scope="col">Site</th>
+								<th scope="col">Model</th>
 								<th scope="col">Status</th>
 								<th scope="col">Telemetry Health</th>
 								<th scope="col">Condition Signal</th>

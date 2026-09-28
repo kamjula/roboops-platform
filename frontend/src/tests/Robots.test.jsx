@@ -6,6 +6,8 @@ const api = vi.hoisted(() => ({
   getRobots: vi.fn(),
   getRobotHealth: vi.fn(),
   getTelemetryConditions: vi.fn(),
+  getSites: vi.fn(),
+  getRobotModels: vi.fn(),
   updateRobotStatus: vi.fn(),
 }));
 const auth = vi.hoisted(() => ({ user: { email: "viewer@example.com", role: "viewer" } }));
@@ -34,9 +36,13 @@ describe("Robots page", () => {
     api.getRobots.mockReset();
     api.getRobotHealth.mockReset();
     api.getTelemetryConditions.mockReset();
+    api.getSites.mockReset();
+    api.getRobotModels.mockReset();
     api.updateRobotStatus.mockReset();
     api.getRobotHealth.mockResolvedValue({ robots: [] });
     api.getTelemetryConditions.mockRejectedValue(new Error("condition unavailable"));
+    api.getSites.mockResolvedValue([{ id: "site-1", site_code: "SITE-HQ", name: "Headquarters" }]);
+    api.getRobotModels.mockResolvedValue([{ id: "model-1", model_code: "MDL-SCOUT", name: "Scout" }]);
     auth.user = { email: "viewer@example.com", role: "viewer" };
   });
 
@@ -46,8 +52,8 @@ describe("Robots page", () => {
     expect(await screen.findByText("Warehouse Scout")).toBeInTheDocument();
     expect(screen.getByText("RBT-001")).toBeInTheDocument();
     expect(screen.getByText("SN-001")).toBeInTheDocument();
-    expect(screen.getByText("site-1")).toBeInTheDocument();
-    expect(screen.getByText("model-1")).toBeInTheDocument();
+    expect(screen.getByText("SITE-HQ")).toHaveAttribute("title", "site-1");
+    expect(screen.getByText("MDL-SCOUT")).toHaveAttribute("title", "model-1");
     expect(screen.getByText("1 robot")).toBeInTheDocument();
   });
 
