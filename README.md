@@ -1,6 +1,43 @@
 # RoboOps
 
-## Honest Project Status
+**A full-stack robotics fleet monitoring and condition-analytics platform built
+to demonstrate trustworthy data products—not fabricated business outcomes.**
+
+[Live demo](https://roboops-platform.vercel.app) ·
+[API docs](https://roboops-api.onrender.com/docs) ·
+[Architecture](docs/architecture.md) ·
+[90-second recruiter tour](docs/recruiter-demo.md)
+
+[![RoboOps fleet monitoring preview](frontend/public/roboops-preview.png)](https://roboops-platform.vercel.app)
+
+## What a recruiter can verify
+
+- **A working product:** use the public read-only demo without credentials and
+  inspect the dashboard, robot inventory, telemetry, health, alerts,
+  maintenance, analytics, tasks, and guided evidence assistant.
+- **Production-minded backend work:** FastAPI, PostgreSQL/Alembic, JWT sessions,
+  RBAC, rate limits, Prometheus metrics, readiness probes, and structured logs.
+- **Data and streaming depth:** idempotent telemetry ingestion, a stateful
+  simulator, Kafka/Redpanda producer-consumer flow, retry handling, and DLQ
+  classification tested in CI.
+- **Truthful analytics:** deterministic and statistical anomaly signals,
+  bounded trend queries, and condition scores explicitly labeled as signals—not
+  validated failure probabilities or remaining-useful-life predictions.
+- **Delivery evidence:** containerized full-stack smoke tests, browser E2E,
+  CodeQL, dependency audits, container scanning, SBOM/provenance, Vercel,
+  Render, and Neon PostgreSQL.
+
+## Fast demo path
+
+1. Open the [live demo](https://roboops-platform.vercel.app) and select
+   **Explore read-only demo**. The Render free tier may need a short cold start.
+2. Review **Dashboard → Telemetry → Analytics** to follow synthetic readings
+   from fleet summary through anomaly and trend evidence.
+3. Review **Alerts → Tasks → Maintenance → AI Assistant** to see persisted
+   operational records, derived review queues, and rule-based summaries without
+   an unsupported LLM claim.
+
+## Honest project status
 
 ![CI](https://github.com/kamjula/roboops-platform/actions/workflows/ci.yml/badge.svg)
 ![Release](https://github.com/kamjula/roboops-platform/actions/workflows/release.yml/badge.svg)
@@ -29,6 +66,9 @@ readings older than seven days. A labeled high-temperature scenario for
 real robot measurements or predictive-maintenance outcomes. Disable it with
 `ROBOOPS_SYNTHETIC_STREAM_ENABLED=false` outside the hosted demo.
 
+<details>
+<summary><strong>Implementation phases (1–24)</strong></summary>
+
 | Phase | Scope | Status |
 |-------|-------|--------|
 | Phase 1 | React/Vite + FastAPI scaffold, Docker Compose, health check | Complete |
@@ -55,6 +95,8 @@ real robot measurements or predictive-maintenance outcomes. Disable it with
 | Phase 22 | Bounded login and telemetry-write rate limiting with retry headers | Complete |
 | Phase 23 | Database-backed revocable JWT sessions and server-side logout | Complete |
 | Phase 24 | Recruiter-facing telemetry analytics workspace | Complete |
+
+</details>
 
 RoboOps is an actively developed portfolio system with a public recruiter demo,
 not a claimed enterprise production service. It uses synthetic seed/simulator
@@ -111,7 +153,7 @@ explicit limitations.
 
 Note: technicians, sensors, sensor_readings, maintenance_schedules, and maintenance_records have database tables and models but do not yet have dedicated CRUD routers. Alerts expose an operational list, condition sync, and resolution workflow rather than unrestricted CRUD.
 
-Robotics Fleet Monitoring & Predictive Maintenance Platform.
+Robotics fleet monitoring and condition-analytics platform.
 
 ## Phase 1
 
@@ -168,9 +210,10 @@ command never resets an existing account's password or role.
 
 Playwright then exercises the rendered application in Chromium: anonymous
 route protection, rejected credentials, admin login, the real 12-robot seeded
-dashboard, alert navigation, server-side logout, and rejected reuse of the
-revoked token. Failure-only traces, screenshots, and video are retained as
-short-lived CI artifacts for diagnosis.
+dashboard, alert navigation, Tasks, Maintenance, the rule-based AI Assistant,
+390px mobile navigation, server-side logout, and rejected reuse of the revoked
+token. Failure-only traces, screenshots, and video are retained as short-lived
+CI artifacts for diagnosis.
 
 ### Phase 7B: HTTP telemetry simulator
 
