@@ -8,9 +8,11 @@ import HealthSummaryPanel from "../components/dashboard/HealthSummaryPanel.jsx";
 import MaintenancePanel from "../components/dashboard/MaintenancePanel.jsx";
 import SiteSummaryPanel from "../components/dashboard/SiteSummaryPanel.jsx";
 import useDashboardData from "../hooks/useDashboardData.js";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Dashboard() {
   const { data, loading, error, refetch } = useDashboardData();
+  const { user } = useAuth();
 
   return (
     <section className="page dashboard-page">
@@ -26,7 +28,7 @@ export default function Dashboard() {
             <RobotStatusChart robotStatus={data.robotStatus} />
             <HealthSummaryPanel healthSummary={data.healthSummary} robotHealth={data.robotHealth} />
             <RecentAlerts alerts={data.latestAlerts} />
-            <MaintenancePanel maintenanceSummary={data.maintenanceSummary} />
+            <MaintenancePanel maintenanceSummary={data.maintenanceSummary} syntheticDemo={user?.email === "demo@roboops.example"} />
             <SiteSummaryPanel siteSummary={data.siteSummary} />
           </div>
         </>

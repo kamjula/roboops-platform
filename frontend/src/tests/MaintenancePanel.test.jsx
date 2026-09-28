@@ -61,4 +61,9 @@ describe("MaintenancePanel", () => {
     );
     expect(screen.getAllByText("0")).toHaveLength(5);
   });
+
+  it("discloses historical seed dates for the public demo", () => {
+    render(<MaintenancePanel maintenanceSummary={{ scheduled_count: 1, overdue_count: 1 }} syntheticDemo />);
+    expect(screen.getByText(/fixed historical dates/)).toBeInTheDocument();
+  });
 });
