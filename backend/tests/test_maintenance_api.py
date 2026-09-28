@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.models.maintenance_schedule import MaintenanceStatus
-from test_dashboard_api import (
+from tests.test_dashboard_api import (
     _make_record, _make_robot, _make_robot_model, _make_schedule, _make_site, _make_technician,
 )
 
