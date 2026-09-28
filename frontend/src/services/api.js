@@ -93,6 +93,14 @@ export function getRobots({ skip, limit } = {}) {
   return request("/api/v1/robots", { params: { skip, limit } });
 }
 
+export function getSites() {
+  return request("/api/v1/sites", { params: { limit: 500 } });
+}
+
+export function getRobotModels() {
+  return request("/api/v1/robot-models", { params: { limit: 500 } });
+}
+
 export function updateRobotStatus(robotId, status) {
   return request(`/api/v1/robots/${robotId}/status`, {
     body: JSON.stringify({ status }),

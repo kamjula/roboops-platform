@@ -13,7 +13,7 @@ function formatAsOf(value) {
   return date.toLocaleString();
 }
 
-export default function MaintenancePanel({ maintenanceSummary } = {}) {
+export default function MaintenancePanel({ maintenanceSummary, syntheticDemo = false } = {}) {
   if (!maintenanceSummary) {
     return (
       <section className="dashboard-section maintenance-section" aria-label="Maintenance">
@@ -40,6 +40,7 @@ export default function MaintenancePanel({ maintenanceSummary } = {}) {
         ))}
       </ul>
       {asOfLabel ? <p className="maintenance-as-of">Updated as of {asOfLabel}</p> : null}
+      {syntheticDemo ? <p className="maintenance-as-of">Seed schedules use fixed historical dates; overdue items are demo examples.</p> : null}
     </section>
   );
 }
