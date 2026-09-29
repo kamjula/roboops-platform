@@ -142,6 +142,8 @@ def test_telemetry_trends_real_query_path(client, db_session):
     assert battery_series["max_value"] == 70.0
     assert battery_series["avg_value"] == 60.0
     assert battery_series["latest_value"] == 50.0
+    expected_battery_start = (now - timedelta(minutes=30)).isoformat().replace("+00:00", "Z")
+    assert battery_series["first_recorded_at"] == expected_battery_start
     assert [point["value"] for point in battery_series["points"]] == [70.0, 60.0, 50.0]
     assert battery_series["points"][0]["recorded_at"] < battery_series["points"][-1]["recorded_at"]
 
@@ -151,6 +153,8 @@ def test_telemetry_trends_real_query_path(client, db_session):
     assert temperature_series["max_value"] == 40.0
     assert temperature_series["avg_value"] == 35.0
     assert temperature_series["latest_value"] == 40.0
+    expected_temperature_start = (now - timedelta(minutes=25)).isoformat().replace("+00:00", "Z")
+    assert temperature_series["first_recorded_at"] == expected_temperature_start
     assert [point["value"] for point in temperature_series["points"]] == [30.0, 40.0]
 
 

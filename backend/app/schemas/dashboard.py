@@ -163,6 +163,7 @@ class TelemetryTrendSeries(BaseModel):
     max_value: float
     avg_value: float
     latest_value: float
+    first_recorded_at: datetime
     latest_recorded_at: datetime
     points: list[TelemetryTrendPoint]
 

@@ -47,6 +47,8 @@ const trends = {
     sensor_type: "temperature",
     unit: "C",
     latest_value: 42.5,
+    first_recorded_at: "2026-09-22T11:00:00Z",
+    latest_recorded_at: "2026-09-22T12:00:00Z",
     points: [{ recorded_at: "2026-09-22T12:00:00Z", value: 42.5 }],
   }],
 };
@@ -85,6 +87,7 @@ describe("Analytics page", () => {
     expect(screen.getAllByText("RB-001")).toHaveLength(2);
     expect(screen.getByText("87654321 (code unavailable)")).toHaveAttribute("title", "87654321-aaaa-bbbb-cccc-123456789012");
     expect(screen.getByText("API-wide total: 120 readings")).toBeInTheDocument();
+    expect(screen.getByText(/Returned readings span 1\.0 hours within the selected 24-hour window/)).toBeInTheDocument();
     expect(screen.getByText("42.50 C")).toBeInTheDocument();
     expect(screen.getByTestId("y-tick")).toHaveTextContent("42.57 C");
     expect(screen.getByTestId("tooltip")).toHaveTextContent("0.456 C");

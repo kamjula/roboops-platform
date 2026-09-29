@@ -91,6 +91,7 @@ def get_telemetry_trends(
             func.min(SensorReading.value).label("min_value"),
             func.max(SensorReading.value).label("max_value"),
             func.avg(SensorReading.value).label("avg_value"),
+            func.min(SensorReading.recorded_at).label("first_recorded_at"),
         )
         .join(Sensor, Sensor.id == SensorReading.sensor_id)
         .join(Robot, Robot.id == SensorReading.robot_id)
@@ -197,6 +198,7 @@ def get_telemetry_trends(
                 "max_value": float(row.max_value),
                 "avg_value": float(row.avg_value),
                 "latest_value": float(latest_value),
+                "first_recorded_at": row.first_recorded_at,
                 "latest_recorded_at": latest_recorded_at,
                 "points": points_by_sensor.get(row.sensor_id, []),
             }

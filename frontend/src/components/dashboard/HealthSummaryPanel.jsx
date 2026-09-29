@@ -38,7 +38,7 @@ export default function HealthSummaryPanel({ healthSummary, robotHealth } = {}) 
           <span className="health-metric-value">{averageHealthValue}</span>
         ) : (
           <p className="empty-state-message health-metric-unavailable">
-            Aggregate health metric is not currently available.
+            No composite health score is defined because sensors use different units.
           </p>
         )}
       </div>
