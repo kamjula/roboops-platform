@@ -14,7 +14,7 @@ describe("HealthSummaryPanel", () => {
   it("explicitly handles unavailable aggregate health metric", () => {
     render(<HealthSummaryPanel healthSummary={baseHealthSummary} />);
     expect(
-      screen.getByText("Aggregate health metric is not currently available.")
+      screen.getByText("No composite health score is defined because sensors use different units.")
     ).toBeInTheDocument();
   });
 
@@ -48,7 +48,7 @@ describe("HealthSummaryPanel", () => {
           };
           render(<HealthSummaryPanel healthSummary={zeroHealthSummary} />);
           expect(
-                  screen.getByText("Aggregate health metric is not currently available.")
+                  screen.getByText("No composite health score is defined because sensors use different units.")
                 ).toBeInTheDocument();
           expect(screen.getByText("Active")).toBeInTheDocument();
           expect(screen.getByText("Maintenance Due")).toBeInTheDocument();
