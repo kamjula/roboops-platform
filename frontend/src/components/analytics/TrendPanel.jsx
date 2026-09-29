@@ -3,6 +3,13 @@ import { formatSensorValue, formatTimestamp } from "./formatters.js";
 
 export default function TrendPanel({ trends, lookbackHours = 24 }) {
   const series = trends?.series ?? [];
+  const firstTimes = series.map((item) => new Date(item.first_recorded_at).getTime()).filter(Number.isFinite);
+  const lastTimes = series.map((item) => new Date(item.latest_recorded_at).getTime()).filter(Number.isFinite);
+  const observedStart = firstTimes.length ? Math.min(...firstTimes) : null;
+  const observedEnd = lastTimes.length ? Math.max(...lastTimes) : null;
+  const observedHours = observedStart !== null && observedEnd !== null
+    ? Math.max(0, (observedEnd - observedStart) / 3_600_000)
+    : null;
   return (
     <section className="analytics-panel analytics-trends-panel">
       <div className="analytics-panel-heading">
@@ -16,6 +23,12 @@ export default function TrendPanel({ trends, lookbackHours = 24 }) {
         <p className="empty-state-message">No telemetry series are available for this window.</p>
       ) : (<>
         {series.length > 4 ? <p className="analytics-note">Showing 4 of {series.length} series. The reading total covers all series.</p> : null}
+        {observedHours !== null ? (
+          <p className="analytics-note">
+            Returned readings span {observedHours.toFixed(1)} hours within the selected {lookbackHours}-hour window
+            ({formatTimestamp(observedStart, true)} to {formatTimestamp(observedEnd, true)}).
+          </p>
+        ) : null}
         <div className="trend-grid">
           {series.slice(0, 4).map((item) => (
             <article className="trend-card" key={item.sensor_id}>
