@@ -2,29 +2,44 @@ version: 2
 updates:
   - package-ecosystem: pip
     directory: /backend
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
     groups:
       python-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: npm
     directory: /frontend
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
     groups:
       frontend-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: github-actions
     directory: /
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
     groups:
       actions-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: docker
     directory: /docker
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
     groups:
       container-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
