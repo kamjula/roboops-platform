@@ -3,6 +3,7 @@ updates:
   - package-ecosystem: pip
     directory: /backend
     schedule: {interval: monthly}
+    open-pull-requests-limit: 0
     groups:
       python-minor-patch:
         patterns: ["*"]
@@ -14,6 +15,7 @@ updates:
   - package-ecosystem: npm
     directory: /frontend
     schedule: {interval: monthly}
+    open-pull-requests-limit: 0
     groups:
       frontend-minor-patch:
         patterns: ["*"]
@@ -25,6 +27,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: monthly}
+    open-pull-requests-limit: 0
     groups:
       actions-minor-patch:
         patterns: ["*"]
@@ -36,6 +39,7 @@ updates:
   - package-ecosystem: docker
     directory: /docker
     schedule: {interval: monthly}
+    open-pull-requests-limit: 0
     groups:
       container-minor-patch:
         patterns: ["*"]
