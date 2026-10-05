@@ -98,14 +98,16 @@ real robot measurements or predictive-maintenance outcomes. Disable it with
 
 </details>
 
-RoboOps is an actively developed portfolio system with a public recruiter demo,
-not a claimed enterprise production service. It uses synthetic seed/simulator
-data and does not claim uptime, cost savings, failure-prediction accuracy,
-remaining useful life, or business impact that has not been measured. Current
-production gaps include managed secret rotation, refresh-token rotation,
-shared multi-replica rate limiting, and hosted Kafka with TLS/SASL/ACLs.
-Kafka/Redpanda remains a local and CI-tested integration rather than a
-hosted-demo dependency.
+RoboOps is a feature-complete portfolio release with a public recruiter demo,
+not a claimed enterprise production service. The current scope is intentionally
+frozen around fleet monitoring, telemetry, operations, and defensible condition
+analytics; future work is tracked separately rather than presented as completed.
+It uses synthetic seed/simulator data and does not claim uptime, cost savings,
+failure-prediction accuracy, remaining useful life, or business impact that has
+not been measured. Production gaps include managed secret rotation, refresh-token
+rotation, shared multi-replica rate limiting, and hosted Kafka with TLS/SASL/ACLs.
+Kafka/Redpanda remains a local and CI-tested integration rather than a hosted-demo
+dependency.
 
 ### Architecture
 
