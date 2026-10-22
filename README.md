@@ -1,4 +1,4 @@
-# RoboOps
+# RoboOps — Robotics Fleet Monitoring & Condition Analytics
 
 **A full-stack robotics fleet monitoring and condition-analytics platform built
 to demonstrate trustworthy data products—not fabricated business outcomes.**
@@ -10,7 +10,7 @@ to demonstrate trustworthy data products—not fabricated business outcomes.**
 
 [![RoboOps fleet monitoring preview](frontend/public/roboops-preview.png)](https://roboops-platform.vercel.app)
 
-## What a recruiter can verify
+## Key Features & Recruiter Demo
 
 - **A working product:** use the public read-only demo without credentials and
   inspect the dashboard, robot inventory, telemetry, health, alerts,
@@ -27,7 +27,7 @@ to demonstrate trustworthy data products—not fabricated business outcomes.**
   CodeQL, dependency audits, container scanning, SBOM/provenance, Vercel,
   Render, and Neon PostgreSQL.
 
-## Fast demo path
+## Quick Demo Walkthrough
 
 1. Open the [live demo](https://roboops-platform.vercel.app) and select
    **Explore read-only demo**. The Render free tier may need a short cold start.
@@ -37,7 +37,7 @@ to demonstrate trustworthy data products—not fabricated business outcomes.**
    operational records, derived review queues, and rule-based summaries without
    an unsupported LLM claim.
 
-## Honest project status
+## Implementation Status & Limitations
 
 ![CI](https://github.com/kamjula/roboops-platform/actions/workflows/ci.yml/badge.svg)
 ![Release](https://github.com/kamjula/roboops-platform/actions/workflows/release.yml/badge.svg)
