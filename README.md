@@ -6,7 +6,7 @@ to demonstrate trustworthy data products—not fabricated business outcomes.**
 [Live demo](https://roboops-platform.vercel.app) ·
 [API docs](https://roboops-api.onrender.com/docs) ·
 [Architecture](docs/architecture.md) ·
-[90-second demo tour](docs/recruiter-demo.md)
+[90-second demo tour](docs/demo-tour.md)
 
 [![RoboOps fleet monitoring preview](frontend/public/roboops-preview.png)](https://roboops-platform.vercel.app)
 
@@ -204,7 +204,7 @@ CI artifacts for diagnosis.
 - [Database schema](docs/database-schema.md)
 - [Condition analytics and ML scope](docs/predictive-maintenance-ml.md)
 - [Hosted demo deployment](docs/deployment.md)
-- [90-second demo tour](docs/recruiter-demo.md)
+- [90-second demo tour](docs/demo-tour.md)
 - [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
 
 Phase-by-phase implementation notes, the telemetry simulator, the Kafka/Redpanda path, database setup, and the full verification order are collapsed below.
