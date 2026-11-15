@@ -1,6 +1,6 @@
 # Hosted Demo Deployment
 
-The recruiter demo uses separate services and keeps every credential outside the repository:
+The public demo uses separate services and keeps every credential outside the repository:
 
 - Vercel serves the React single-page application from `frontend/`.
 - Render builds the FastAPI production container from `render.yaml`.
