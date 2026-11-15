@@ -43,5 +43,5 @@ starting with the first tagged release.
 ## Historical milestones
 
 - Phase 13: authenticated alert lifecycle API and role-aware UI.
-- Phase 12: reproducible builds and recruiter-facing evidence cleanup.
+- Phase 12: reproducible builds and release-evidence cleanup.
 - Phases 1-11: platform foundation through truthful condition scoring.
