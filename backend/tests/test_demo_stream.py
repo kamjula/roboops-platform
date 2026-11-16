@@ -1,4 +1,4 @@
-"""The opt-in portfolio stream stays repeatable and touches only demo data."""
+"""The opt-in demo stream stays repeatable and touches only demo data."""
 from datetime import datetime, timedelta, timezone
 import uuid
 

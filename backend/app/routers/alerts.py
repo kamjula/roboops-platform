@@ -24,7 +24,7 @@ def sync_condition_alerts(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles(UserRole.OPERATOR, UserRole.ADMIN)),
 ) -> ConditionAlertSyncResponse:
-    """Translate truthful fleet condition signals into deduplicated alerts."""
+    """Translate fleet condition signals into deduplicated alerts."""
     return alert_service.sync_condition_alerts(db, lookback_hours=lookback_hours)
 
 

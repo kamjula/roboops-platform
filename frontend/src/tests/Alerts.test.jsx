@@ -67,7 +67,7 @@ describe("Alerts page", () => {
     expect(screen.getByText("RBT-001")).toBeInTheDocument();
   });
 
-  it.each(["operator", "admin"])("allows %s to sync truthful condition alerts", async (role) => {
+  it.each(["operator", "admin"])("allows %s to sync condition alerts", async (role) => {
     api.syncConditionAlerts.mockResolvedValue({
       evaluated: 2, created: 1, updated: 0, resolved: 0, unchanged: 0, unknown: 1,
     });

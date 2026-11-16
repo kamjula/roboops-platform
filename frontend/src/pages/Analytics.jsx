@@ -21,7 +21,7 @@ export default function Analytics() {
         <div>
           <div className="eyebrow">Evidence from persisted telemetry</div>
           <h1>Fleet analytics</h1>
-          <p>Inspect bounded anomaly signals, telemetry trends, and honest condition scores.</p>
+          <p>Inspect bounded anomaly signals, telemetry trends, and condition scores.</p>
         </div>
         <label className="analytics-lookback">
           Analysis window

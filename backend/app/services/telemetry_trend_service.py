@@ -61,7 +61,7 @@ def get_telemetry_trends(
     lookback_hours: int = DEFAULT_LOOKBACK_HOURS,
     robot_id: uuid.UUID | None = None,
 ) -> dict:
-    """Return truthful per-sensor summaries plus bounded recent trend points.
+    """Return per-sensor summaries plus bounded recent trend points.
 
     Summary statistics cover the complete requested window. PostgreSQL ranks
     raw readings per sensor in one set-based query; application-side fair-share

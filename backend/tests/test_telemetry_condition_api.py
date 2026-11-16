@@ -77,7 +77,7 @@ def test_fleet_telemetry_conditions_validate_query(client):
     ).status_code == 422
 
 
-def test_telemetry_condition_returns_typed_truthful_contract(client):
+def test_telemetry_condition_returns_typed_contract(client):
     robot_id = uuid.uuid4()
     with patch(
         "app.routers.dashboard.telemetry_condition_service.get_robot_condition",
@@ -99,7 +99,7 @@ def test_telemetry_condition_returns_typed_truthful_contract(client):
     service.assert_called_once()
 
 
-def test_fleet_telemetry_conditions_return_typed_truthful_contract(client):
+def test_fleet_telemetry_conditions_return_typed_contract(client):
     robot_id = uuid.uuid4()
     with patch(
         "app.routers.dashboard.telemetry_condition_service.get_fleet_conditions",
