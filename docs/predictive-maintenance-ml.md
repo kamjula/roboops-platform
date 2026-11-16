@@ -26,7 +26,23 @@ A supervised predictive-maintenance model may be added only after one of these d
 1. Product telemetry is joined to an explicit, verified failure/breakdown outcome with a known event timestamp and label definition; or
 2. A reputable public predictive-maintenance benchmark is used for model evaluation, clearly identified as external benchmark data and kept separate from RoboOps production telemetry claims.
 
-Any future supervised evaluation must use time-aware train/validation/test splits so future observations do not leak into earlier training examples.
+The gate is implemented in `backend/app/services/ml_training_readiness.py`. `assess_supervised_training_readiness` checks row count, required features, explicit boolean failure labels, and class balance. `require_supervised_training_ready` raises `SupervisedTrainingBlocked` with the failed reasons, so code that would train a model cannot run on unlabeled telemetry. The current feature dataset has no failure labels, so supervised training is blocked today.
+
+## Time-aware split contract
+
+Any supervised evaluation must use time-aware train/validation/test splits so future observations do not leak into earlier training examples. `backend/app/services/ml_time_split.py` implements the contract:
+
+- `chronological_split` orders feature rows by `bucket_start`. Every training timestamp is earlier than every validation timestamp, and every validation timestamp is earlier than every test timestamp.
+- Cut points fall between distinct timestamps, so rows from several robots in the same hour always land in the same split.
+- An optional `gap` drops rows at the start of the validation and test splits that sit within `gap` of the previous split's last timestamp. Set it to at least the label horizon, so a training label never covers the validation or test period. The number of dropped rows is reported as `purged_row_count`.
+- The same rows always give the same split, whatever order they arrive in. Invalid fractions, a negative gap, missing timestamps, or too few timestamps raise `ValueError`.
+- `prepare_supervised_splits` runs the readiness gate first and only then splits.
+
+`backend/tests/test_ml_time_split.py` covers ordering, shared timestamps, input-order independence, gap purging, invalid settings, and the block on unlabeled telemetry.
+
+## External benchmark option
+
+If a supervised model is evaluated before RoboOps has verified failure labels, it must use a public run-to-failure benchmark (for example, NASA's C-MAPSS turbofan degradation data). That work would live in its own module and report, be labeled as external benchmark results, and never be mixed with RoboOps telemetry, the hosted demo, or the condition-score endpoints. No benchmark model is included in the repository today.
 
 ## Implemented condition scoring
 
@@ -36,4 +52,4 @@ This signal is deliberately described as condition/anomaly scoring. It is not a 
 
 ## Next implementation steps
 
-The next defensible ML increment requires either verified product failure labels or a clearly separated public benchmark. Until then, engineering work should focus on condition-signal monitoring, drift visibility, versioned model metadata, and operational alert workflows without inventing supervised performance claims.
+The next ML increment requires either verified product failure labels or a clearly separated public benchmark; the readiness gate and split contract above are already in place for it. Until then, engineering work should focus on condition-signal monitoring, drift visibility, versioned model metadata, and operational alert workflows without inventing supervised performance claims.
