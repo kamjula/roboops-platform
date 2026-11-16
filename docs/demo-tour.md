@@ -1,8 +1,8 @@
-# RoboOps — 90-second demo tour
+# RoboOps: 90-second demo tour
 
-A short walkthrough of what is already implemented in the repository and the
-hosted read-only demo. It adds no performance, accuracy, uptime, or
-business-impact claims beyond what has been measured.
+A short walkthrough of the hosted read-only demo and the code behind it. It
+only covers what is implemented, with no performance, accuracy, uptime, or
+business-impact numbers that have not been measured.
 
 ## Open the demo
 
@@ -16,8 +16,8 @@ business-impact claims beyond what has been measured.
 ## 0–20 s · Product and data boundary
 
 Open the **Dashboard**. The hosted demo runs a bounded synthetic telemetry
-stream for 12 fictional robots, so the complete workflow is visible without
-real customer data or real-world prediction-accuracy claims. Recent alerts show
+stream for 12 fictional robots, so the whole workflow is visible without real
+customer data or real-world prediction accuracy. Recent alerts show
 separate trigger and recorded timestamps.
 
 ## 20–45 s · Telemetry and analytics
@@ -48,7 +48,7 @@ Open **Alerts**, **Tasks**, and **Maintenance**.
 - Login and telemetry-write endpoints return `429` with rate-limit headers. The
   limiter is process-local, as documented in the README.
 
-## 70–90 s · Delivery evidence
+## 70–90 s · CI and deployment
 
 Open the [GitHub Actions](https://github.com/kamjula/roboops-platform/actions)
 page or the README badges. CI runs backend and PostgreSQL tests, frontend tests
@@ -57,15 +57,15 @@ tests, Chromium E2E, CodeQL, dependency audits, and container scans. The
 frontend is hosted on Vercel, the API on Render, and PostgreSQL on Neon.
 
 **Known limitation:** the next engineering step is labeled failure data and
-time-aware model evaluation. Until that exists, the condition score is not
-presented as a validated predictive-maintenance model.
+time-aware model evaluation. Until that exists, the condition score is an
+anomaly signal, not a validated predictive-maintenance model.
 
-## Evidence map
+## Where to look
 
-| Question | Where to look | Not claimed |
+| Area | Where to look | Out of scope |
 |---|---|---|
-| Is it live? | Public read-only Vercel demo and Render readiness endpoint | Paid SLA or guaranteed uptime |
-| Is it full stack? | React routes, FastAPI docs, PostgreSQL migrations | Enterprise production adoption |
-| Is streaming real? | Redpanda CI smoke path and consumer idempotency | Hosted Kafka or exactly-once delivery |
-| Is the ML real? | Statistical signals, feature pipeline, training gate, condition-score disclaimer | Failure-prediction accuracy or remaining useful life |
-| Is it secure? | RBAC, revocable sessions, rate limits, CodeQL and container scans | Formal penetration test or compliance certification |
+| Hosting | Public read-only Vercel demo and Render readiness endpoint | Paid SLA or guaranteed uptime |
+| Full stack | React routes, FastAPI docs, PostgreSQL migrations | Enterprise production adoption |
+| Streaming | Redpanda CI smoke path and consumer idempotency | Hosted Kafka or exactly-once delivery |
+| ML | Statistical signals, feature pipeline, training gate, condition-score notes | Failure-prediction accuracy or remaining useful life |
+| Security | RBAC, revocable sessions, rate limits, CodeQL and container scans | Formal penetration test or compliance certification |
