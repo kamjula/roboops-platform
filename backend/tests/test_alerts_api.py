@@ -186,7 +186,7 @@ def test_condition_sync_resolves_only_normal_signal(operator_client, db_session,
         robot_id=robot.id,
         severity=AlertSeverity.WARNING,
         alert_type="telemetry_condition",
-        message="Existing truthful condition alert.",
+        message="Existing condition alert.",
         triggered_at=datetime(2026, 9, 18, 10, tzinfo=timezone.utc),
     )
     db_session.add(existing)
