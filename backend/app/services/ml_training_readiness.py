@@ -1,4 +1,4 @@
-"""Truthful readiness checks before supervised predictive-maintenance training."""
+"""Readiness checks before supervised predictive-maintenance training."""
 
 from __future__ import annotations
 
