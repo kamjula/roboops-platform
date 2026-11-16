@@ -168,7 +168,7 @@ def get_health_summary(db: Session, as_of: datetime | None = None) -> HealthSumm
 
     average_health_value is always null and health_metric_available is
     always false: no table stores a normalized/battery health score, and
-    raw sensor_readings.value cannot be honestly averaged across sensors
+    raw sensor_readings.value cannot be meaningfully averaged across sensors
     that use different units (temperature, volts, vibration, etc.).
     """
     as_of = as_of or _utc_now()
