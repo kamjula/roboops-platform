@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-This is an actively developed portfolio project. Only the latest commit on `main` is supported; no older releases receive security fixes.
+This project is under active development. Only the latest commit on `main` is supported; no older releases receive security fixes.
 
 ## Known, Documented Limitations (not vulnerabilities to report)
 
