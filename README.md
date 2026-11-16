@@ -1,7 +1,8 @@
-# RoboOps — Robotics Fleet Monitoring & Condition Analytics
+# RoboOps: Robotics Fleet Monitoring & Condition Analytics
 
-**A full-stack robotics fleet monitoring and condition-analytics platform built
-to demonstrate trustworthy data products—not fabricated business outcomes.**
+A full-stack platform for monitoring a robot fleet: telemetry ingestion,
+health and anomaly analytics, alerts, maintenance, and a read-only public demo
+running on synthetic data.
 
 [Live demo](https://roboops-platform.vercel.app) ·
 [API docs](https://roboops-api.onrender.com/docs) ·
@@ -12,30 +13,30 @@ to demonstrate trustworthy data products—not fabricated business outcomes.**
 
 ## Key Features
 
-- **A working product:** use the public read-only demo without credentials and
-  inspect the dashboard, robot inventory, telemetry, health, alerts,
-  maintenance, analytics, tasks, and guided evidence assistant.
-- **Production-minded backend work:** FastAPI, PostgreSQL/Alembic, JWT sessions,
-  RBAC, rate limits, Prometheus metrics, readiness probes, and structured logs.
-- **Data and streaming depth:** idempotent telemetry ingestion, a stateful
-  simulator, Kafka/Redpanda producer-consumer flow, retry handling, and DLQ
+- **Public demo:** open the read-only demo without credentials and browse the
+  dashboard, robot inventory, telemetry, health, alerts, maintenance,
+  analytics, tasks, and a rule-based assistant.
+- **Backend:** FastAPI, PostgreSQL/Alembic, JWT sessions, RBAC, rate limits,
+  Prometheus metrics, readiness probes, and structured logs.
+- **Data and streaming:** idempotent telemetry ingestion, a stateful simulator,
+  a Kafka/Redpanda producer-consumer flow, retry handling, and DLQ
   classification tested in CI.
-- **Truthful analytics:** deterministic and statistical anomaly signals,
-  bounded trend queries, and condition scores explicitly labeled as signals—not
-  validated failure probabilities or remaining-useful-life predictions.
-- **Delivery evidence:** containerized full-stack smoke tests, browser E2E,
-  CodeQL, dependency audits, container scanning, SBOM/provenance, Vercel,
-  Render, and Neon PostgreSQL.
+- **Analytics:** deterministic and statistical anomaly signals, bounded trend
+  queries, and condition scores. The scores are anomaly signals, not validated
+  failure probabilities or remaining-useful-life predictions.
+- **Testing and delivery:** containerized full-stack smoke tests, browser E2E,
+  CodeQL, dependency audits, container scanning, SBOM/provenance, and
+  deployment on Vercel, Render, and Neon PostgreSQL.
 
 ## Quick Demo Walkthrough
 
 1. Open the [live demo](https://roboops-platform.vercel.app) and select
    **Explore read-only demo**. The Render free tier may need a short cold start.
 2. Review **Dashboard → Telemetry → Analytics** to follow synthetic readings
-   from fleet summary through anomaly and trend evidence.
+   from the fleet summary down to anomalies and trends.
 3. Review **Alerts → Tasks → Maintenance → AI Assistant** to see persisted
-   operational records, derived review queues, and rule-based summaries without
-   an unsupported LLM claim.
+   operational records, derived review queues, and rule-based summaries (no LLM
+   is connected).
 
 ## Implementation Status & Limitations
 
@@ -81,8 +82,8 @@ real robot measurements or predictive-maintenance outcomes. Disable it with
 | Phase 8 | Kafka producer/consumer, Redpanda E2E path, retry and DLQ handling | Complete |
 | Phase 9 | Telemetry-driven robot health analytics | Complete |
 | Phase 10 | Anomaly detection, health trends, and query scalability | Complete |
-| Phase 11 | ML feature pipeline, training gate, and truthful condition scoring | Complete |
-| Phase 12 | Reproducible builds and release evidence | Complete |
+| Phase 11 | ML feature pipeline, training gate, and condition scoring | Complete |
+| Phase 12 | Reproducible builds and release artifacts | Complete |
 | Phase 13 | Authenticated alert lifecycle API and role-aware UI | Complete |
 | Phase 14 | Condition-signal alert synchronization and database deduplication | Complete |
 | Phase 15 | Prometheus HTTP metrics, request correlation, and structured access logs | Complete |
@@ -98,14 +99,16 @@ real robot measurements or predictive-maintenance outcomes. Disable it with
 
 </details>
 
-RoboOps is a feature-complete portfolio release with a public read-only demo,
-not a claimed enterprise production service. The current scope is intentionally
-frozen around fleet monitoring, telemetry, operations, and defensible condition
-analytics; future work is tracked separately rather than presented as completed.
-It uses synthetic seed/simulator data and does not claim uptime, cost savings,
-failure-prediction accuracy, remaining useful life, or business impact that has
-not been measured. Production gaps include managed secret rotation, refresh-token
-rotation, shared multi-replica rate limiting, and hosted Kafka with TLS/SASL/ACLs.
+### Scope and limitations
+
+RoboOps is feature-complete for its current scope (fleet monitoring, telemetry,
+operations, and condition analytics) and runs as a public read-only demo. It is
+not an enterprise production service, and future work is tracked separately.
+All data comes from the seed scripts and the simulator, so there are no uptime,
+cost-savings, failure-prediction accuracy, remaining-useful-life, or business
+impact numbers here. Known production gaps: managed secret rotation,
+refresh-token rotation, shared multi-replica rate limiting, and hosted Kafka
+with TLS/SASL/ACLs.
 Kafka/Redpanda remains a local and CI-tested integration rather than a hosted-demo
 dependency.
 
@@ -145,8 +148,8 @@ flowchart LR
 
 Login attempts and authenticated telemetry writes use configurable fixed-window
 limits and return `429`, `Retry-After`, and `X-RateLimit-*` headers when
-exceeded. The current limiter is bounded and process-local; it is not presented
-as a distributed quota across multiple replicas.
+exceeded. The current limiter is bounded and process-local; it does not share
+a quota across multiple replicas.
 
 Issued access tokens are tied to database-backed sessions through a signed `jti`
 claim. Logout revokes the presented session server-side; see
