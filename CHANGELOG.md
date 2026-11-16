@@ -21,7 +21,7 @@ starting with the first tagged release.
   dead-letter topic handling.
 - Added telemetry health, deterministic anomaly rules, trend analytics,
   statistical anomaly scoring, feature extraction, training-readiness gates,
-  and truthful unsupervised condition scoring.
+  and unsupervised condition scoring.
 - Added condition-to-alert synchronization with database deduplication and
   conservative unknown-signal handling.
 
@@ -44,4 +44,4 @@ starting with the first tagged release.
 
 - Phase 13: authenticated alert lifecycle API and role-aware UI.
 - Phase 12: reproducible builds and release-evidence cleanup.
-- Phases 1-11: platform foundation through truthful condition scoring.
+- Phases 1-11: platform foundation through condition scoring.

@@ -1,6 +1,6 @@
 # Contributing to RoboOps
 
-Thanks for your interest in this project. RoboOps is primarily a solo portfolio project, but it follows real engineering practices so it can be contributed to like any other open-source repository.
+Thanks for your interest in this project. RoboOps is mostly a solo project, but it is set up so that anyone can contribute the same way as to any other open-source repository.
 
 ## Getting Started
 
