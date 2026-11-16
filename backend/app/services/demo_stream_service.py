@@ -1,4 +1,4 @@
-"""Persist bounded, clearly synthetic telemetry for the hosted portfolio demo."""
+"""Persist bounded, clearly synthetic telemetry for the hosted demo."""
 from __future__ import annotations
 
 import math
