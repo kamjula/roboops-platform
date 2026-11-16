@@ -1,6 +1,6 @@
 # Predictive-maintenance ML
 
-RoboOps builds predictive-maintenance capability in stages so the repository does not claim model performance that the available data cannot support.
+RoboOps builds predictive-maintenance capability in stages, so it never reports model performance that the available data cannot support.
 
 ## Current implemented foundation
 
@@ -13,9 +13,9 @@ Current features per hourly robot window:
 
 The extraction query is set-based in PostgreSQL and supports an optional robot scope and bounded lookback window.
 
-## What RoboOps does not claim yet
+## What RoboOps does not do yet
 
-RoboOps does not currently claim supervised failure prediction, remaining useful life, accuracy, precision, recall, ROC-AUC, or any other supervised-model metric.
+RoboOps does not currently do supervised failure prediction, and it reports no remaining useful life, accuracy, precision, recall, ROC-AUC, or any other supervised-model metric.
 
 The existing `maintenance_records` table describes completed maintenance work, but it does not contain a verified failure outcome label. Treating every maintenance record as a failure would create a false training target because preventive, scheduled, and corrective maintenance are not equivalent outcomes.
 
