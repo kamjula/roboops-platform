@@ -41,16 +41,26 @@ def synthetic_value(robot_code: str, sensor_type: str, at: datetime) -> float:
     return round(32 + robot_number / 2 + 1.8 * math.sin((slot + robot_number) / 7), 2)
 
 
+def backfill_timestamps(bucket: datetime) -> list[datetime]:
+    """Current bucket plus a sparse 24-hour history on a quarter-hour grid.
+
+    The grid always includes the :00 reading of every hour, so the hourly
+    RBT-003 scenario is visible right after a cold start.
+    """
+    grid = bucket - timedelta(minutes=bucket.minute % 15)
+    history = [grid - index * 3 * INTERVAL for index in range(STARTUP_HISTORY_BUCKETS)]
+    return list(dict.fromkeys([bucket, *history]))
+
+
 def write_demo_readings(db: Session, *, now: datetime | None = None, startup: bool = False) -> int:
     bucket = current_bucket(now or datetime.now(timezone.utc))
     sensors = db.scalars(select(Sensor).where(Sensor.id.in_(SENSOR_IDS))).all()
+    # At startup backfill a sparse 24-hour chart; later ticks add current readings.
+    timestamps = backfill_timestamps(bucket) if startup else [bucket]
     rows = []
     for sensor in sensors:
         robot_code, sensor_type = SENSOR_IDS[sensor.id]
-        # At startup backfill a sparse 24-hour chart; later ticks add current readings.
-        offsets = range(0, STARTUP_HISTORY_BUCKETS * 3, 3) if startup else (0,)
-        for offset in offsets:
-            timestamp = bucket - offset * INTERVAL
+        for timestamp in timestamps:
             event_id = f"{SOURCE_PREFIX}{sensor.sensor_code}:{int(timestamp.timestamp())}"
             rows.append({
                 "id": uuid.uuid5(uuid.NAMESPACE_URL, event_id),

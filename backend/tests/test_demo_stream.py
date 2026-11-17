@@ -19,6 +19,18 @@ def test_synthetic_values_are_repeatable_and_bucketed():
     assert stream.synthetic_value("RBT-003", "temperature", bucket.replace(minute=0)) == 48.0
 
 
+def test_startup_backfill_keeps_the_hourly_scenario_visible():
+    bucket = datetime(2026, 9, 26, 12, 5, tzinfo=timezone.utc)
+
+    timestamps = stream.backfill_timestamps(bucket)
+
+    assert timestamps[0] == bucket
+    assert all(t.minute % 15 == 0 for t in timestamps[1:])
+    assert len(timestamps) == stream.STARTUP_HISTORY_BUCKETS + 1
+    hot = [t for t in timestamps if stream.synthetic_value("RBT-003", "temperature", t) == 48.0]
+    assert len(hot) == 24
+
+
 def test_stream_is_idempotent_and_prunes_only_old_tagged_demo_rows(db_session, monkeypatch):
     sites, models, _ = seed_reference_data(db_session)
     build_sensors(db_session, build_robots(db_session, sites, models))
