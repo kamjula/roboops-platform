@@ -82,7 +82,7 @@ real robot measurements or predictive-maintenance outcomes. Disable it with
 | Phase 8 | Kafka producer/consumer, Redpanda E2E path, retry and DLQ handling | Complete |
 | Phase 9 | Telemetry-driven robot health analytics | Complete |
 | Phase 10 | Anomaly detection, health trends, and query scalability | Complete |
-| Phase 11 | ML feature pipeline, training gate, and condition scoring | Complete |
+| Phase 11 | ML feature pipeline, training gate, time-aware split contract, and condition scoring | Complete |
 | Phase 12 | Reproducible builds and release artifacts | Complete |
 | Phase 13 | Authenticated alert lifecycle API and role-aware UI | Complete |
 | Phase 14 | Condition-signal alert synchronization and database deduplication | Complete |

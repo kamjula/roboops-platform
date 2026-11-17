@@ -70,3 +70,23 @@ def assess_supervised_training_readiness(
         positive_labels=positive,
         negative_labels=negative,
     )
+
+
+class SupervisedTrainingBlocked(RuntimeError):
+    """Raised when a dataset does not pass the supervised training-readiness gate."""
+
+    def __init__(self, readiness: TrainingReadiness):
+        self.readiness = readiness
+        super().__init__("supervised training blocked: " + ", ".join(readiness.reasons))
+
+
+def require_supervised_training_ready(
+    rows: Sequence[Mapping[str, object]] | Iterable[Mapping[str, object]],
+    *,
+    label_key: str = "failure_within_horizon",
+) -> TrainingReadiness:
+    """Return the readiness result, or raise SupervisedTrainingBlocked if not ready."""
+    readiness = assess_supervised_training_readiness(rows, label_key=label_key)
+    if not readiness.ready:
+        raise SupervisedTrainingBlocked(readiness)
+    return readiness
